@@ -9,7 +9,6 @@ class Refex:
         self.refex_log_binned_buckets = {}
 
     def load_graph(self, file_name):
-        print(file_name)
         source = 0
         for line in open(file_name):
             line = line.strip()
@@ -59,9 +58,6 @@ class Refex:
                     within_egonet_edges += 1
         return within_egonet_edges / 2
 
-    def compute_log_base_p(self, value):
-        return np.log(value) / np.log(self.p)
-
     def compute_recursive_features(self, features):
         vertex_fx_vector = {}
         no_vertices = self.get_number_of_vertices()
@@ -102,9 +98,11 @@ class Refex:
 
         return vertex_fx_vector
 
-    def get_log_binned_fx_buckets(self):
+    def init_log_binned_fx_buckets(self):
         no_vertices = self.get_number_of_vertices()
-        max_fx_value = np.ceil(self.compute_log_base_p(no_vertices))
+        max_fx_value = np.ceil(np.log2(no_vertices))  # fixing value of p = 0.5,
+        # In our experiments, we found p = 0.5 to be a sensible choice:
+        # with each bin containing the bottom half of the remaining nodes.
         log_binned_fx_keys = [value for value in xrange(0, int(max_fx_value))]
 
         fx_bucket_size = []
@@ -112,14 +110,11 @@ class Refex:
 
         for idx in np.arange(0.0, max_fx_value):
             starting_bucket_size *= self.p
-            fx_bucket_size.append(np.ceil(starting_bucket_size))
+            fx_bucket_size.append(int(np.ceil(starting_bucket_size)))
 
         total_slots_in_all_buckets = sum(fx_bucket_size)
         if total_slots_in_all_buckets > no_vertices:
             fx_bucket_size[0] -= (total_slots_in_all_buckets - no_vertices)
 
-        return dict(zip(log_binned_fx_keys, fx_bucket_size))
-
-
-
+        self.refex_log_binned_buckets =  dict(zip(log_binned_fx_keys, fx_bucket_size))
 
