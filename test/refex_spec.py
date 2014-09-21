@@ -1,5 +1,6 @@
 import unittest
 import refex
+import numpy as np
 
 
 class RefexSpec(unittest.TestCase):
@@ -29,7 +30,15 @@ class RefexSpec(unittest.TestCase):
         rfx.load_graph("resources/sample_graph.txt")
         rfx.init_log_binned_fx_buckets()
         features = {"degree": [(0, 4), (1, 3), (2, 2), (3, 2), (4, 4), (5, 1)]}
-        expected_vertex_fx = {5: [0], 2: [0], 3: [0], 1: [1], 0: [1], 4: [1]}  # fx_value of 1 has 2 candidates,
+        expected = {5: [0], 2: [0], 3: [0], 1: [1], 0: [1], 4: [1]}  # fx_value of 1 has 2 candidates,
+        expected_vertex_fx = np.array([expected[v] for v in sorted(expected.keys())])
+        expected_fx_column = expected_vertex_fx[:, 0]
         # but there is a tie for node fx value of vertex 0 and 4, hence they belong to fx_value 1 and not 2
-        first_iteration_computed_vertex_features = rfx.compute_recursive_features(features)
-        self.assertEquals(first_iteration_computed_vertex_features, expected_vertex_fx)
+        first_iteration_computed_vertex_features = rfx.compute_initial_features(features)
+        self.assertEquals(first_iteration_computed_vertex_features[0], expected_vertex_fx[0])
+        self.assertEquals(first_iteration_computed_vertex_features[1], expected_vertex_fx[1])
+        self.assertEquals(first_iteration_computed_vertex_features[2], expected_vertex_fx[2])
+        self.assertEquals(first_iteration_computed_vertex_features[3], expected_vertex_fx[3])
+        self.assertEquals(first_iteration_computed_vertex_features[4], expected_vertex_fx[4])
+        self.assertEquals(first_iteration_computed_vertex_features[5], expected_vertex_fx[5])
+        self.assertEquals(list(first_iteration_computed_vertex_features[:, 0]), list(expected_fx_column))
