@@ -1,55 +1,44 @@
+import networkx as nx
+
 
 class Features:
+    """
+    The features class. Placeholder for the graph and node features.
+    """
     def __init__(self):
-        self.graph = {}
+        """
+        initializes an empty graph dict
+        :return:
+        """
+        self.graph = nx.DiGraph()
 
     def load_graph(self, file_name):
-        source = 0
+        """
+        loads a networkx DiGraph from a file. Support directed weighted graph. Each comma separated line is source, destination and weight.
+        :param file_name: <file_name>
+        :return:
+        """
         for line in open(file_name):
             line = line.strip()
-            line = line.split()
-            for dest in line:
-                dest = int(dest)
-                if source not in self.graph:
-                    self.graph[source] = [dest]
-                else:
-                    self.graph[source].append(dest)
-                if dest not in self.graph:
-                    self.graph[dest] = [source]
-                else:
-                    self.graph[dest].append(source)
-            source += 1
-        for key in self.graph.keys():
-            self.graph[key] = list(set(self.graph[key]))
+            line = line.split(',')
+            source = int(line[0])
+            dest = int(line[1])
+            wt = float(line[2])
+            self.graph.add_edge(source, dest, weight=wt)
 
-    def get_number_of_vertices(self):
-        return len(self.graph)
-
-    def get_degree_of_vertex(self, vertex):
-        return len(self.graph[vertex])
-
-    def get_egonet_degree(self, vertex):
-        adjacency_list = self.graph[vertex]
-        return sum([self.get_degree_of_vertex(v) for v in adjacency_list])
-
-    def get_egonet_members(self, vertex):
-        return self.graph[vertex]
-
-    def get_count_of_edges_leaving_egonet(self, vertex):
-        edges_leaving_egonet = 0
-        egonet = self.get_egonet_members(vertex)
-        for vertex in egonet:
-            for neighbour in self.get_egonet_members(vertex):
-                if neighbour not in egonet:
-                    edges_leaving_egonet += 1
-        return edges_leaving_egonet
-
-    def get_count_of_within_egonet_edges(self, vertex):
-        within_egonet_edges = 0
-        egonet = self.get_egonet_members(vertex)
-        for vertex in egonet:
-            for neighbour in self.get_egonet_members(vertex):
-                if neighbour in egonet:
-                    within_egonet_edges += 1
-        return within_egonet_edges / 2
-
+    def get_egonet_members(self, vertex, level=0):
+        """
+        node's egonet members, same as its adjacency list
+        :param vertex: vertex_id
+        :param level: level <level> egonet. Default 0
+        :return: returns level <level> egonet of the vertex
+        """
+        lvl_zero_egonet = self.graph.successors(vertex)
+        lvl_zero_egonet.append(vertex)
+        if level == 1:
+            lvl_one_egonet = []
+            for node in lvl_zero_egonet:
+                if node != vertex:
+                    lvl_one_egonet.extend(self.graph.successors(node))
+            lvl_zero_egonet.extend(lvl_one_egonet)
+        return list(set(lvl_zero_egonet))
