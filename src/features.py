@@ -1,5 +1,7 @@
 import networkx as nx
 import os
+import numpy as np
+
 
 class Features:
     """
@@ -11,6 +13,12 @@ class Features:
         :return:
         """
         self.graph = nx.DiGraph()
+        self.no_of_vertices = 0
+        self.p = 0.5  # fraction of nodes placed in log bin
+        self.s = 0  # feature similarity threshold
+        self.TOLERANCE = 0.0001
+        self.MAX_ITERATIONS = 100
+        self.refex_log_binned_buckets = []
 
     def load_graph(self, file_name):
         """
@@ -286,5 +294,76 @@ class Features:
                 raise Exception("RIDeR output directory is empty!")
             self.compute_rider_egonet_primitive_features(rider_dir, node_egonets, ['wgt'])
 
+        self.no_of_vertices = self.graph.number_of_nodes()
+        self.init_log_binned_fx_buckets()
+
+        fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+        self.compute_log_binned_features(fx_names)
+
     def compute_iterative_features(self):
         pass
+
+    def get_sorted_feature_values(self, feature_values):
+        sorted_fx_values = sorted(feature_values, key=lambda x: x[1])
+        return sorted_fx_values, len(sorted_fx_values)
+
+    def init_log_binned_fx_buckets(self):
+        max_fx_value = np.ceil(np.log2(self.no_of_vertices))  # fixing value of p = 0.5,
+        # In our experiments, we found p = 0.5 to be a sensible choice:
+        # with each bin containing the bottom half of the remaining nodes.
+        log_binned_fx_keys = [value for value in xrange(0, int(max_fx_value))]
+
+        fx_bucket_size = []
+        starting_bucket_size = self.no_of_vertices
+
+        for idx in np.arange(0.0, max_fx_value):
+            starting_bucket_size *= self.p
+            fx_bucket_size.append(int(np.ceil(starting_bucket_size)))
+
+        total_slots_in_all_buckets = sum(fx_bucket_size)
+        if total_slots_in_all_buckets > self.no_of_vertices:
+            fx_bucket_size[0] -= (total_slots_in_all_buckets - self.no_of_vertices)
+
+        log_binned_buckets_dict = dict(zip(log_binned_fx_keys, fx_bucket_size))
+
+        for binned_value in sorted(log_binned_buckets_dict.keys()):
+            for count in xrange(0, log_binned_buckets_dict[binned_value]):
+                self.refex_log_binned_buckets.append(binned_value)
+
+    def vertical_bin(self, feature):
+        vertical_binned_vertex = {}
+        count_of_vertices_with_log_binned_fx_value_assigned = 0
+        fx_value_of_last_vertex_assigned_to_bin = -1
+        previous_binned_value = 0
+
+        sorted_fx_values, sorted_fx_size = self.get_sorted_feature_values(feature)
+
+        for vertex, value in sorted_fx_values:
+            current_binned_value = self.refex_log_binned_buckets[count_of_vertices_with_log_binned_fx_value_assigned]
+
+            # If there are ties, it may be necessary to include more than p|V| nodes
+            if current_binned_value != previous_binned_value and value == fx_value_of_last_vertex_assigned_to_bin:
+                vertical_binned_vertex[vertex] = previous_binned_value
+            else:
+                vertical_binned_vertex[vertex] = current_binned_value
+                previous_binned_value = current_binned_value
+
+            count_of_vertices_with_log_binned_fx_value_assigned += 1
+            fx_value_of_last_vertex_assigned_to_bin = value
+
+        return vertical_binned_vertex
+
+    def compute_log_binned_features(self, fx_list):
+        graph_nodes = sorted(self.graph.nodes())
+        for feature in fx_list:
+            if 'bin-'+feature in self.graph.node[graph_nodes[0]]:
+                continue
+
+            node_fx_values = []
+            for n in graph_nodes:
+                node_fx_values.append(tuple([n, self.graph.node[n][feature]]))
+
+            vertical_binned_vertices = self.vertical_bin(node_fx_values)
+            for vertex in vertical_binned_vertices.keys():
+                binned_value = vertical_binned_vertices[vertex]
+                self.graph.node[vertex]['bin-'+feature] = binned_value
