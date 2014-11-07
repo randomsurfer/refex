@@ -1,6 +1,7 @@
 import networkx as nx
 import os
 import numpy as np
+from numpy.lib.recfunctions import merge_arrays
 
 
 class Features:
@@ -300,7 +301,7 @@ class Features:
         fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
         self.compute_log_binned_features(fx_names)
 
-    def compute_iterative_features(self):
+    def compute_recursive_features(self):
         pass
 
     def get_sorted_feature_values(self, feature_values):
@@ -308,7 +309,7 @@ class Features:
         return sorted_fx_values, len(sorted_fx_values)
 
     def init_log_binned_fx_buckets(self):
-        max_fx_value = np.ceil(np.log2(self.no_of_vertices))  # fixing value of p = 0.5,
+        max_fx_value = np.ceil(np.log2(self.no_of_vertices) + self.TOLERANCE)  # fixing value of p = 0.5,
         # In our experiments, we found p = 0.5 to be a sensible choice:
         # with each bin containing the bottom half of the remaining nodes.
         log_binned_fx_keys = [value for value in xrange(0, int(max_fx_value))]
@@ -329,6 +330,10 @@ class Features:
         for binned_value in sorted(log_binned_buckets_dict.keys()):
             for count in xrange(0, log_binned_buckets_dict[binned_value]):
                 self.refex_log_binned_buckets.append(binned_value)
+
+        if len(self.refex_log_binned_buckets) != self.no_of_vertices:
+            print self.refex_log_binned_buckets, self.no_of_vertices
+            raise Exception("Vertical binned bucket size not equal to the number of vertices!")
 
     def vertical_bin(self, feature):
         vertical_binned_vertex = {}
@@ -367,3 +372,69 @@ class Features:
             for vertex in vertical_binned_vertices.keys():
                 binned_value = vertical_binned_vertices[vertex]
                 self.graph.node[vertex]['bin-'+feature] = binned_value
+
+    def create_feature_matrix(self, attrs=['bin-']):
+        graph_nodes = sorted(self.graph.nodes())
+        fx_names = []
+        dtype = []
+        for attr in attrs:
+            for fx_name in sorted(self.graph.node[graph_nodes[0]].keys()):
+                if fx_name.startswith(attr):
+                    fx_names.append(fx_name)
+                    dtype.append(tuple([fx_name, '>f4']))
+
+        fx_matrix = []
+        for node in graph_nodes:
+            feature_row = []
+            for fx_name in fx_names:
+                feature_row.append(self.graph.node[node][fx_name])
+            fx_matrix.append(tuple(feature_row))
+        return np.array(fx_matrix, dtype=dtype)  # return a structured numpy array
+
+    def fx_column_comparator(self, col_1, col_2, max_diff):
+        diff = float(max_diff) - abs(col_1 - col_2) + self.TOLERANCE
+        return (diff >= self.TOLERANCE).all()
+
+    def compare_and_prune_vertex_fx_vectors(self, prev_feature_vector, new_feature_vector, max_diff):
+        fx_graph = nx.Graph()
+
+        if prev_feature_vector is not None:
+            col_prev = list(prev_feature_vector.dtype.names)
+        else:
+            col_prev = []
+
+        col_new = list(new_feature_vector.dtype.names)
+
+        # compare new features with previous features
+        if len(col_prev) > 0:  # compare for something which is not a first iteration
+            for col_i in col_prev:
+                for col_j in col_new:
+                    if self.fx_column_comparator(prev_feature_vector[col_i], new_feature_vector[col_j], 0.0):
+                        fx_graph.add_edge(col_i, col_j)
+
+        # compare new features with new
+        for col_i in col_new:
+            for col_j in col_new:
+                if col_i < col_j:  # to avoid redundant comparisons
+                    if self.fx_column_comparator(new_feature_vector[col_i], new_feature_vector[col_j], max_diff):
+                        fx_graph.add_edge(col_i, col_j)
+
+        connected_fx = nx.connected_components(fx_graph)
+        for cc in connected_fx:
+            sorted_cc = sorted(cc)[1:]
+            for fx in sorted_cc:
+                if fx in col_prev:
+                    col_prev.remove(fx)
+                else:
+                    col_new.remove(fx)
+
+        if len(col_prev) == 0:
+            return prev_feature_vector
+
+        if len(col_new) == 0:
+            return prev_feature_vector
+
+        final_prev_vector = prev_feature_vector[col_prev]
+        final_new_vector = new_feature_vector[col_new]
+
+        return merge_arrays((final_prev_vector, final_new_vector), flatten=True)
