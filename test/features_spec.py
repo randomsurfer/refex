@@ -25,10 +25,11 @@ class FeaturesSpec(unittest.TestCase):
         fx = features.Features()
         fx.load_graph("resources/sample_graph.txt")
         fx.compute_primitive_features()
-        self.assertEquals(fx.graph.node[1]['wn0'], 4)
-        self.assertEquals(fx.graph.node[1]['wn1'], 4)
-        self.assertEquals(fx.graph.node[2]['wn0'], 3)
-        self.assertEquals(fx.graph.node[2]['wn1'], 4)
+        # TODO: Check the log binned Fx values
+        self.assertEquals(fx.graph.node[1]['wn0'], 1)
+        self.assertEquals(fx.graph.node[1]['wn1'], 0)
+        self.assertEquals(fx.graph.node[2]['wn0'], 0)
+        self.assertEquals(fx.graph.node[2]['wn1'], 0)
 
     def test_should_init_vertical_bins(self):
         fx = features.Features()
@@ -63,13 +64,13 @@ class FeaturesSpec(unittest.TestCase):
         fx.load_graph("resources/sample_graph_2.txt")
         fx.compute_primitive_features(rider_fx=False, rider_dir="resources/riders/")
         for vertex in fx.graph.nodes():
-            self.assertEquals(len(fx.graph.node[vertex]), 56)
+            self.assertEquals(len(fx.graph.node[vertex]), 28)
 
         fx = features.Features()
         fx.load_graph("resources/sample_graph_2.txt")
         fx.compute_primitive_features(rider_fx=True, rider_dir="resources/riders/")
         for vertex in fx.graph.nodes():
-            self.assertEquals(len(fx.graph.node[vertex]), 536)
+            self.assertEquals(len(fx.graph.node[vertex]), 268)
 
     def test_should_compare_cols_within_maxdist(self):
         fx = features.Features()
@@ -191,3 +192,33 @@ class FeaturesSpec(unittest.TestCase):
 
         self.assertEquals(list(actual.dtype.names), expected_dtype_name)
         self.assertTrue((actual == expected).all())
+
+    def test_should_compute_recursive_features(self):
+        fx = features.Features()
+
+        fx.load_graph("resources/sample_graph_2.txt")
+        fx.compute_primitive_features(rider_fx=False, rider_dir="resources/riders/")
+        for vertex in fx.graph.nodes():
+            self.assertEquals(len(fx.graph.node[vertex]), 28)
+
+        prev_fx_matrix = fx.create_initial_feature_matrix()
+        new_fx_matrix = fx.compute_recursive_features(prev_fx_matrix, 1, 0.0)
+        print len(list(new_fx_matrix.dtype.names))
+        print len(list(prev_fx_matrix.dtype.names))
+        abc = 1
+
+        #
+        #
+        # prev_fx_matrix = np.array([(1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (1.0, 2.0, 3.0)],
+        #                           dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
+        # new_fx_matrix = np.array([(1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (1.0, 2.0, 3.0)],
+        #                           dtype=[('d', '<f8'), ('e', '<f8'), ('f', '<f8')])
+        #
+        # actual = fx.compare_and_prune_vertex_fx_vectors(prev_fx_matrix, new_fx_matrix, 0)
+        # expected = np.array([(1.0, 2.0, 3.0), (1.0, 2.0, 3.0), (1.0, 2.0, 3.0)],
+        #                           dtype=[('a', '<f8'), ('b', '<f8'), ('c', '<f8')])
+        #
+        # expected_dtype_name = ['a', 'b', 'c']
+        #
+        # self.assertEquals(list(actual.dtype.names), expected_dtype_name)
+        # self.assertTrue((actual == expected).all())
