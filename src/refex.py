@@ -1,152 +1,81 @@
+import features
+import argparse
 import numpy as np
-import networkx as nx
 
+if __name__ == "__main__":
+    argument_parser = argparse.ArgumentParser(prog='run_recursive_feature_extraction')
+    argument_parser.add_argument('-g', '--graph', help='input graph file', required=True)
+    argument_parser.add_argument('-i', '--iterations', help='number of refex iterations', required=True)
+    argument_parser.add_argument('-s', '--max-diff', help='start value of feature similarity threshold (default=0)',
+                                 default=0, type=int)
+    argument_parser.add_argument('-r', '--rider', help='enable rider features (default)', dest='rider',
+                                 action='store_true')
+    argument_parser.add_argument('-dr', '--disable-rider', help='disable rider features', dest='rider',
+                                 action='store_false')
+    argument_parser.add_argument('-rd', '--rider-dir', help='rider directory (specify, if rider is enabled)')
+    argument_parser.set_defaults(rider=True)
 
-class Refex:
-    def __init__(self, no_of_vertices):
-        self.no_of_vertices = no_of_vertices
-        self.p = 0.5  # fraction of nodes placed in log bin
-        self.s = 0  # feature similarity threshold
-        self.TOLERANCE = 0.0001
-        self.MAX_ITERATIONS = 100
-        self.refex_log_binned_buckets = {}
+    args = argument_parser.parse_args()
 
-    def get_sorted_feature_values(self, feature_values):
-        sorted_fx_values = sorted(feature_values, key=lambda x: x[1])
-        return sorted_fx_values, len(sorted_fx_values)
+    graph_file = args.graph
+    max_diff = args.max_diff
 
-    def vertical_bin(self, feature):
-        vertical_binned_vertex = {}
-        sorted_fx_values, sorted_fx_size = self.get_sorted_feature_values(feature)
-        count_of_vertices_with_log_binned_fx_value = 0
+    if args.rider:
+        rider_dir = args.rider_dir
+        if rider_dir is None:
+            raise Exception('Please specify the RIDeR directory!!')
+    else:
+        rider_dir = 'INVALID_RIDER_PATH'
 
-        for log_binned_fx_value in sorted(self.refex_log_binned_buckets.keys()):
-            if self.no_of_vertices == count_of_vertices_with_log_binned_fx_value:
-                # case when all vertices have been already binned owing to ties/collision
-                break
+    fx = features.Features()
 
-            no_vertices_in_current_log_binned_bucket = self.refex_log_binned_buckets[log_binned_fx_value]
+    fx.MAX_ITERATIONS = int(args.iterations)
 
-            fx_value_of_last_vertex_to_be_taken = sorted_fx_values[count_of_vertices_with_log_binned_fx_value +
-                                                                   no_vertices_in_current_log_binned_bucket - 1][1]
-            # If there are ties, it may be necessary to include more than p|V| nodes
-            for idx in xrange(count_of_vertices_with_log_binned_fx_value +
-                              no_vertices_in_current_log_binned_bucket, sorted_fx_size):
-                if sorted_fx_values[idx][1] == fx_value_of_last_vertex_to_be_taken:
-                    no_vertices_in_current_log_binned_bucket += 1
-                else:
-                    break
+    # load input graph
+    fx.load_graph(graph_file)
 
-            for idx in xrange(count_of_vertices_with_log_binned_fx_value,
-                              count_of_vertices_with_log_binned_fx_value +
-                              no_vertices_in_current_log_binned_bucket):
-                vertex_no = sorted_fx_values[idx][0]
-                vertical_binned_vertex[vertex_no] = log_binned_fx_value  # assign log binned value to vertex
+    # compute primitive/rider features
+    fx.compute_primitive_features(rider_fx=args.rider, rider_dir=rider_dir)
 
-            count_of_vertices_with_log_binned_fx_value += no_vertices_in_current_log_binned_bucket
+    # compute initial feature matrix
+    primitive_feature_matrix = fx.create_initial_feature_matrix()
 
-        return vertical_binned_vertex
+    # prune any redundant primitive/rider features
+    prev_pruned_fx_matrix = fx.compare_and_prune_vertex_fx_vectors(prev_feature_vector=None,
+                                                                   new_feature_vector=primitive_feature_matrix,
+                                                                   max_dist=max_diff)
 
-    def compute_initial_features(self, features):
-        vertex_fx_vector = {}
-        for k in xrange(0, self.no_of_vertices):
-            vertex_fx_vector[k] = []
+    prev_pruned_fx_size = len(list(prev_pruned_fx_matrix.dtype.names))
 
-        for feature in sorted(features.keys()):
-            feature_values = features[feature]  # assuming list of 2-tuples
-            binned_feature_vertex = self.vertical_bin(feature_values)
-            for v in binned_feature_vertex:
-                vertex_fx_vector[v].append(binned_feature_vertex[v])
+    fx.update_feature_matrix_to_graph(prev_pruned_fx_matrix)
 
-        return np.array([vertex_fx_vector[v] for v in sorted(vertex_fx_vector.keys())])
+    current_pruned_fx_size = 0
+    print 'Initial number of features: %s' % prev_pruned_fx_size
 
-    def fx_column_comparator(self, col_1, col_2, max_diff):
-        diff = max_diff - abs(col_1 - col_2)
-        return (diff > self.TOLERANCE).all()
+    no_iterations = 0
 
-    def compare_and_prune_vertex_fx_vectors(self, prev_vertex_fx_vector, curr_vertex_fx_vector, max_diff):
-        fx_graph = nx.Graph()
-        cols_to_delete_in_curr = []
-        cols_to_delete_in_prev = []
-        col_p = prev_vertex_fx_vector.shape[1]
-        col_c = curr_vertex_fx_vector.shape[1]
+    while no_iterations <= fx.MAX_ITERATIONS:
+        # compute and prune recursive features for iteration #no_iterations
+        current_iteration_pruned_fx_matrix = fx.compute_recursive_features(prev_fx_matrix=prev_pruned_fx_matrix,
+                                                                           iter_no=no_iterations, max_dist=max_diff)
+        current_pruned_fx_size = len(list(current_iteration_pruned_fx_matrix.dtype.names))
 
-        # compare current with previous
-        for i in xrange(0, col_p):
-            for j in xrange(0, col_c):
-                if self.fx_column_comparator(prev_vertex_fx_vector[:, i], curr_vertex_fx_vector[:, j], max_diff):
-                    fx_graph.add_edge(i, col_p + j)
+        print 'Iteration: %s, Number of Features: %s' % (no_iterations, current_pruned_fx_size)
 
-        # compare current with current
-        for i in xrange(0, col_p - 1):
-            for j in xrange(i + 1, col_p):
-                if self.fx_column_comparator(curr_vertex_fx_vector[:, i], curr_vertex_fx_vector[:, j], max_diff):
-                    fx_graph.add_edge(col_p + i, col_p + j)
+        if current_pruned_fx_size == prev_pruned_fx_size:
+            print 'No new features added, exiting!'
+            break
 
-        connected_fx = nx.connected_components(fx_graph)
-        for cc in connected_fx:
-            sorted_cc = sorted(cc)[1:]
-            for v in sorted_cc:
-                if v >= col_p:
-                    cols_to_delete_in_curr.append(v - col_p)
-                else:
-                    cols_to_delete_in_prev.append(v)
+        # update the latest feature matrix to the graph
+        fx.update_feature_matrix_to_graph(current_iteration_pruned_fx_matrix)
 
-        return np.append(np.delete(prev_vertex_fx_vector, cols_to_delete_in_prev, 1),
-                         np.delete(curr_vertex_fx_vector, cols_to_delete_in_curr, 1), 0)
+        # update the previous iteration feature matrix with the latest one
+        prev_pruned_fx_matrix = current_iteration_pruned_fx_matrix
+        prev_pruned_fx_size = current_pruned_fx_size
 
-    def feature_dict_to_numpy_array(self, vertex_fx_dict):
-        return np.array([vertex_fx_dict[v] for v in sorted(vertex_fx_dict.keys())])
+        # increment feature similarity threshold by 1
+        max_diff += 1
 
-    def compute_recursive_feature(self, initial_vertex_fx_vector, features):
-        no_iterations = 0
-        max_diff = self.s
-        prev_vertex_fx_vectors = initial_vertex_fx_vector
+        no_iterations += 1
 
-        while no_iterations <= self.MAX_ITERATIONS:
-            current_iteration_fx_vectors = {}
-            for k in xrange(0, no_iterations):
-                current_iteration_fx_vectors[k] = []
-
-            for feature in sorted(features.keys()):
-                feature_values = features[feature]
-                binned_vertex = self.vertical_bin(feature_values)
-                for v in binned_vertex:
-                    current_iteration_fx_vectors[v].append(binned_vertex[v])
-
-            current_iteration_fx_vectors = self.feature_dict_to_numpy_array(current_iteration_fx_vectors)
-
-            updated_and_pruned_vertex_fx = self.compare_and_prune_vertex_fx_vectors(prev_vertex_fx_vectors,
-                                                                                    current_iteration_fx_vectors,
-                                                                                    max_diff)
-            updated_and_pruned_fx_size = updated_and_pruned_vertex_fx.shape[1]
-            prev_fx_size = prev_vertex_fx_vectors.shape[1]
-
-            if prev_fx_size >= updated_and_pruned_fx_size:
-                return prev_vertex_fx_vectors
-
-            prev_vertex_fx_vectors = np.copy(updated_and_pruned_vertex_fx)
-            max_diff += 1
-            no_iterations += 1
-
-        return prev_vertex_fx_vectors
-
-    def init_log_binned_fx_buckets(self):
-        max_fx_value = np.ceil(np.log2(self.no_of_vertices))  # fixing value of p = 0.5,
-        # In our experiments, we found p = 0.5 to be a sensible choice:
-        # with each bin containing the bottom half of the remaining nodes.
-        log_binned_fx_keys = [value for value in xrange(0, int(max_fx_value))]
-
-        fx_bucket_size = []
-        starting_bucket_size = self.no_of_vertices
-
-        for idx in np.arange(0.0, max_fx_value):
-            starting_bucket_size *= self.p
-            fx_bucket_size.append(int(np.ceil(starting_bucket_size)))
-
-        total_slots_in_all_buckets = sum(fx_bucket_size)
-        if total_slots_in_all_buckets > self.no_of_vertices:
-            fx_bucket_size[0] -= (total_slots_in_all_buckets - self.no_of_vertices)
-
-        self.refex_log_binned_buckets = dict(zip(log_binned_fx_keys, fx_bucket_size))
-
+    fx.save_feature_matrix("featureValues.csv")

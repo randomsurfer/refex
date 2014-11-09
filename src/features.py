@@ -310,10 +310,32 @@ class Features:
         fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
         self.compute_log_binned_features(fx_names)
 
+    def update_feature_matrix_to_graph(self, feature_matrix):
+        # input is the structured numpy array, update these features to the graph nodes
+        graph_nodes = sorted(self.graph.nodes())
+        for node in graph_nodes:
+            self.graph.node[node] = {}
+        feature_names = list(feature_matrix.dtype.names)
+        for feature in feature_names:
+            values = feature_matrix[feature].tolist()
+            for i, node in enumerate(graph_nodes):
+                self.graph.node[node][feature] = values[i]
+
+    def save_feature_matrix(self, file_name):
+        graph_nodes = sorted(self.graph.nodes())
+        feature_names = list(sorted(self.graph.node[graph_nodes[0]].keys()))
+        fo = open(file_name, 'w')
+        for node in graph_nodes:
+            fo.write('%s' % node)
+            for feature in feature_names:
+                fo.write(',%s' % self.graph.node[node][feature])
+            fo.write('\n')
+
     def compute_recursive_features(self, prev_fx_matrix, iter_no, max_dist):
         # takes the prev feature matrix and the iteration number and max_dist
         # returns the new feature matrix after pruning similar features based on the similarity max dist
 
+        print 'Number of features: ', len(self.graph.node[2].keys())
         new_fx_names = []
 
         for vertex in self.graph.nodes():
@@ -446,6 +468,7 @@ class Features:
                 self.graph.node[vertex][feature] = binned_value
 
     def create_initial_feature_matrix(self):
+        # TODO: Code replicated between this one and the next function. Refactor.
         # Returns a numpy structured node-feature matrix for all the features assigned to nodes in graph
         graph_nodes = sorted(self.graph.nodes())
         fx_names = []
@@ -486,7 +509,7 @@ class Features:
         diff = float(max_diff) - abs(col_1 - col_2) + self.TOLERANCE
         return (diff >= self.TOLERANCE).all()
 
-    def compare_and_prune_vertex_fx_vectors(self, prev_feature_vector, new_feature_vector, max_diff):
+    def compare_and_prune_vertex_fx_vectors(self, prev_feature_vector, new_feature_vector, max_dist):
         # input: prev iteration node-feature matrix and current iteration node-feature matrix (as structured
         # numpy array) and max_dist. Creates a feature graph based on the max_dist criteria.
         # We use a (potentially different) logic from the original refex idea.
@@ -517,7 +540,7 @@ class Features:
         for col_i in col_new:
             for col_j in col_new:
                 if col_i < col_j:  # to avoid redundant comparisons
-                    if self.fx_column_comparator(new_feature_vector[col_i], new_feature_vector[col_j], max_diff):
+                    if self.fx_column_comparator(new_feature_vector[col_i], new_feature_vector[col_j], max_dist):
                         fx_graph.add_edge(col_i, col_j)
 
         connected_fx = nx.connected_components(fx_graph)
