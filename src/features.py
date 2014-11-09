@@ -559,12 +559,15 @@ class Features:
                 elif fx_name in col_prev:
                     old_features.append(fx_name)
 
-            # |    Old    |    New    | Representative
-            # -----------------------------------------
-            # | Empty     | Empty     | Do Nothing
-            # | Empty     | Non empty | Pick 1 from New
-            # | Non empty | Empty     | Do Nothing
-            # | Non empty | Non empty | Delete All New
+            # Choose the representative candidate for this connected component as follows:
+            #  ----------------------------------------
+            # |    Old    |    New    | Representative |
+            #  ----------------------------------------
+            # | Empty     | Empty     | Do Nothing     |
+            # | Empty     | Non empty | Pick 1 from New|
+            # | Non empty | Empty     | Do Nothing     |
+            # | Non empty | Non empty | Delete All New |
+            #  ----------------------------------------
 
             if len(old_features) == 0 and len(new_features) > 0:
                 features_to_be_removed = new_features[1:]
