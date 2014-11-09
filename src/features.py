@@ -321,10 +321,10 @@ class Features:
             for i, node in enumerate(graph_nodes):
                 self.graph.node[node][feature] = values[i]
 
-    def save_feature_matrix(self, file_name):
+    def save_feature_matrix(self, out_file_name):
         graph_nodes = sorted(self.graph.nodes())
         feature_names = list(sorted(self.graph.node[graph_nodes[0]].keys()))
-        fo = open(file_name, 'w')
+        fo = open(out_file_name, 'w')
         for node in graph_nodes:
             fo.write('%s' % node)
             for feature in feature_names:
@@ -543,29 +543,47 @@ class Features:
                     if self.fx_column_comparator(new_feature_vector[col_i], new_feature_vector[col_j], max_dist):
                         fx_graph.add_edge(col_i, col_j)
 
+        # Note that a feature retained in iteration k may not be retained in iteration k + 1,
+        # due to recursive features connecting them in the feature-graph.
+        # In this case, we still record and output the feature because it was retained at some iteration.
+        # This means that we need to keep a memo of the features
+
         connected_fx = nx.connected_components(fx_graph)
         for cc in connected_fx:
-            sorted_cc = sorted(cc)[1:]
-            for fx in sorted_cc:
-                if fx in col_prev:
-                    col_prev.remove(fx)
-                else:
-                    col_new.remove(fx)
+            old_features = []
+            new_features = []
 
-        # TODO: Might need a refactoring here
-        # prev_fx_vector is None => First iteration, prune correlated features
+            for fx_name in cc:
+                if fx_name in col_new:
+                    new_features.append(fx_name)
+                elif fx_name in col_prev:
+                    old_features.append(fx_name)
+
+            # |    Old    |    New    | Representative
+            # -----------------------------------------
+            # | Empty     | Empty     | Do Nothing
+            # | Empty     | Non empty | Pick 1 from New
+            # | Non empty | Empty     | Do Nothing
+            # | Non empty | Non empty | Delete All New
+
+            if len(old_features) == 0 and len(new_features) > 0:
+                features_to_be_removed = new_features[1:]
+                for fx in features_to_be_removed:
+                    col_new.remove(fx)  # delete all but one from new
+                continue
+
+            if len(old_features) > 0 and len(new_features) > 0:
+                for fx in new_features:
+                    col_new.remove(fx)  # Delete all new
+                continue
+
         if prev_feature_vector is None:
             return new_feature_vector[col_new]
-
-        # features in both prev and new same for max_dist, hence we send back prev
-        if len(col_prev) == 0:
-            return prev_feature_vector
 
         if len(col_new) == 0:
             return prev_feature_vector
 
-        final_prev_vector = prev_feature_vector[col_prev]
         final_new_vector = new_feature_vector[col_new]
 
         # return the merged fx matrix
-        return merge_arrays((final_prev_vector, final_new_vector), flatten=True)
+        return merge_arrays((prev_feature_vector, final_new_vector), flatten=True)
