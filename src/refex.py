@@ -57,12 +57,17 @@ if __name__ == "__main__":
         # compute and prune recursive features for iteration #no_iterations
         current_iteration_pruned_fx_matrix = fx.compute_recursive_features(prev_fx_matrix=prev_pruned_fx_matrix,
                                                                            iter_no=no_iterations, max_dist=max_diff)
+
+        if current_iteration_pruned_fx_matrix is None:
+            print 'No new features added, all pruned. Exiting!'
+            break
+
         current_pruned_fx_size = len(list(current_iteration_pruned_fx_matrix.dtype.names))
 
         print 'Iteration: %s, Number of Features: %s' % (no_iterations, current_pruned_fx_size)
 
         if current_pruned_fx_size == prev_pruned_fx_size:
-            print 'No new features added, exiting!'
+            print 'No new features added, Exiting!'
             break
 
         # update the latest feature matrix to the graph

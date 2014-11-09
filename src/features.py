@@ -21,6 +21,7 @@ class Features:
         self.MAX_ITERATIONS = 100
         self.refex_log_binned_buckets = []
         self.vertex_egonets = {}
+        self.memo_recursive_fx_names = {}
 
     def load_graph(self, file_name):
         """
@@ -341,10 +342,16 @@ class Features:
         for vertex in self.graph.nodes():
             new_fx_names = self.compute_recursive_egonet_features(vertex, iter_no)
 
+            if len(new_fx_names) == 0:
+                return None
+
         # compute and replace the new feature values with their log binned values
         self.compute_log_binned_features(new_fx_names)
         # create the feature matrix of all the features in the current graph structure
         new_fx_matrix = self.create_feature_matrix(new_fx_names)
+
+        for name in list(prev_fx_matrix.dtype.names):
+            self.memo_recursive_fx_names[name] = 1
 
         # return the pruned fx matrix after adding and comparing the new recursive features for similarity
         return self.compare_and_prune_vertex_fx_vectors(prev_fx_matrix, new_fx_matrix, max_dist)
@@ -361,7 +368,8 @@ class Features:
         vertex_lvl_1_egonet = self.vertex_egonets[vertex][1]
         vertex_lvl_1_egonet_size = float(len(vertex_lvl_1_egonet))
 
-        fx_list = [fx_name for fx_name in sorted(self.graph.node[vertex].keys())]
+        fx_list = [fx_name for fx_name in sorted(self.graph.node[vertex].keys())
+                   if fx_name not in self.memo_recursive_fx_names]
         new_fx_list = []
 
         level_id = '0'
