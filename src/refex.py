@@ -1,6 +1,5 @@
 import features
 import argparse
-import numpy as np
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser(prog='run_recursive_feature_extraction')
