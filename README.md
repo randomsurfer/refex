@@ -9,7 +9,7 @@ Link to the <a href="http://dl.acm.org/citation.cfm?id=2020512">paper</a>.
 
 **Running the Code:**
 
-* Needs `python 2.7`.
+* Requires `python 2.7`.
 
 * Install package dependencies using
 `pip install -r requirements.txt`
@@ -25,6 +25,6 @@ Link to the <a href="http://dl.acm.org/citation.cfm?id=2020512">paper</a>.
     * Each line of the eEP file represents a cell/block of the partition, the member nodes of the cell are separated with space.
     * We compute recursive (sum and means) egonet features for eEP based primitive features.
 * The `test/resources` directory has examples of sample input graph and epsilon equitable partitions.
-* This installation might slightly differ from the original paper, please refer to the inline text comments for more details.
+* This code might (potentially) differ from the original paper, please refer to the inline text comments for more details.
 * The list of primitive features and their nomenclature is captured from the original code implementation provided by the authors. We are really grateful to them for sharing the code.  
     
