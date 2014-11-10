@@ -214,7 +214,7 @@ class Features:
                                 for attr in attrs:
                                     if attr == 'wgt':
                                         self.graph.node[vertex]['xeda-'+attr+'0-'+fx_name_base] \
-                                            += self.graph.node[n2]['xda-'+attr+'-'+fx_name_base]
+                                            += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
 
                         for n2 in out_neighbours:
                             if n2 in vertex_lvl_0_egonet:
@@ -228,7 +228,7 @@ class Features:
                                 for attr in attrs:
                                     if attr == 'wgt':
                                         self.graph.node[vertex]['xesa-'+attr+'0-'+fx_name_base] \
-                                            += self.graph.node[n2]['xsa-'+attr+'-'+fx_name_base]
+                                            += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
 
                     # Level 1 Egonet
                     for n1 in vertex_lvl_1_egonet:
@@ -247,7 +247,7 @@ class Features:
                                 for attr in attrs:
                                     if attr == 'wgt':
                                         self.graph.node[vertex]['xeda-'+attr+'1-'+fx_name_base] \
-                                            += self.graph.node[n2]['xda-'+attr+'-'+fx_name_base]
+                                            += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
 
                         for n2 in out_neighbours:
                             if n2 in vertex_lvl_0_egonet:
@@ -261,7 +261,7 @@ class Features:
                                 for attr in attrs:
                                     if attr == 'wgt':
                                         self.graph.node[vertex]['xesa-'+attr+'1-'+fx_name_base] \
-                                            += self.graph.node[n2]['xsa-'+attr+'-'+fx_name_base]
+                                            += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
 
     def compute_primitive_features(self, rider_fx=False, rider_dir='INVALID_PATH'):
         # computes the primitive local features
