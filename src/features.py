@@ -519,13 +519,8 @@ class Features:
 
     def compare_and_prune_vertex_fx_vectors(self, prev_feature_vector, new_feature_vector, max_dist):
         # input: prev iteration node-feature matrix and current iteration node-feature matrix (as structured
-        # numpy array) and max_dist. Creates a feature graph based on the max_dist criteria.
-        # We use a (potentially different) logic from the original refex idea.
-        # We compare the prev iteration features with the new iteration features using
-        # a max_dist criteria of 0. And those amongst the current/new iteration criteria based on the max_diff/max_dist
-        # given by the current iteration value of the max_dist. We do this to avoid pruning of old feature due to the
-        # incrementally increasing value of max_dist with every iteration of recursive feature generation.
-        # This aspect wasn't very clear from the ReFeX paper!
+        # numpy array) and max_dist. Creates a feature graph based on the max_dist criteria, refer the inline comments
+        # on choosing the representative candidate for each connected component below.
         # Returns a numpy structured array of the final features
 
         fx_graph = nx.Graph()
@@ -541,7 +536,7 @@ class Features:
         if len(col_prev) > 0:  # compare for something which is not a first iteration
             for col_i in col_prev:
                 for col_j in col_new:
-                    if self.fx_column_comparator(prev_feature_vector[col_i], new_feature_vector[col_j], 0.0):
+                    if self.fx_column_comparator(prev_feature_vector[col_i], new_feature_vector[col_j], max_dist):
                         fx_graph.add_edge(col_i, col_j)
 
         # compare new features with new
