@@ -137,131 +137,153 @@ class Features:
             self.graph.node[vertex]['xea-'+attr+level_id] = self.graph.node[vertex]['xesa-'+attr+level_id] + \
                                                             self.graph.node[vertex]['xeda-'+attr+level_id]
 
+    def init_rider_features(self, vertex, fx_name_base, attrs=['wgt']):
+        self.graph.node[vertex]['wd-'+fx_name_base] = 0.0  # destination
+        self.graph.node[vertex]['ws-'+fx_name_base] = 0.0  # source
+        for attr in attrs:
+            self.graph.node[vertex]['wda-'+attr+'-'+fx_name_base] = 0.0
+            self.graph.node[vertex]['wsa-'+attr+'-'+fx_name_base] = 0.0
+
+        ## Egonet Rider Features
+        self.graph.node[vertex]['wes0-'+fx_name_base] = 0.0
+        self.graph.node[vertex]['wes1-'+fx_name_base] = 0.0
+        self.graph.node[vertex]['wed0-'+fx_name_base] = 0.0
+        self.graph.node[vertex]['wed1-'+fx_name_base] = 0.0
+        self.graph.node[vertex]['xes0-'+fx_name_base] = 0.0
+        self.graph.node[vertex]['xes1-'+fx_name_base] = 0.0
+        self.graph.node[vertex]['xed0-'+fx_name_base] = 0.0
+        self.graph.node[vertex]['xed1-'+fx_name_base] = 0.0
+        for attr in attrs:
+            self.graph.node[vertex]['wesa-'+attr+'0-'+fx_name_base] = 0.0
+            self.graph.node[vertex]['xesa-'+attr+'0-'+fx_name_base] = 0.0
+            self.graph.node[vertex]['weda-'+attr+'0-'+fx_name_base] = 0.0
+            self.graph.node[vertex]['xeda-'+attr+'0-'+fx_name_base] = 0.0
+            self.graph.node[vertex]['wesa-'+attr+'1-'+fx_name_base] = 0.0
+            self.graph.node[vertex]['xesa-'+attr+'1-'+fx_name_base] = 0.0
+            self.graph.node[vertex]['weda-'+attr+'1-'+fx_name_base] = 0.0
+            self.graph.node[vertex]['xeda-'+attr+'1-'+fx_name_base] = 0.0
+
     def compute_rider_egonet_primitive_features(self, rider_dir, attrs=['wgt']):
         for file_name in os.listdir(rider_dir):
+            print 'RIDeR Features: ', file_name
             for i, line in enumerate(open(os.path.join(rider_dir, file_name))):
                 line = line.strip().split()
                 block = set([int(n) for n in line])
+
+                neighbours = []
+                for node in block:
+                    neighbours.extend(self.graph.predecessors(node))
+                    neighbours.extend(self.graph.successors(node))
+
+                neighbours = list(set(neighbours))
+                block_neighbours = {}
+                for node in neighbours:
+                    block_neighbours[node] = 1
+
                 fx_name_base = file_name + '_' + str(i)
                 for vertex in sorted(self.vertex_egonets.keys()):
-                    in_neighbours = self.graph.predecessors(vertex)
-                    out_neighbours = self.graph.successors(vertex)
+                    self.init_rider_features(vertex, fx_name_base=fx_name_base, attrs=['wgt'])
+                    if vertex in block_neighbours:
+                        in_neighbours = self.graph.predecessors(vertex)
+                        out_neighbours = self.graph.successors(vertex)
 
-                    in_connections_to_block = set(in_neighbours) & block
-                    in_connections_to_block_size = len(in_connections_to_block)
-                    out_connections_to_block = set(out_neighbours) & block
-                    out_connections_to_block_size = len(out_connections_to_block)
+                        in_connections_to_block = set(in_neighbours) & block
+                        in_connections_to_block_size = len(in_connections_to_block)
+                        out_connections_to_block = set(out_neighbours) & block
+                        out_connections_to_block_size = len(out_connections_to_block)
 
-                    ## Local Rider Features
-                    self.graph.node[vertex]['wd-'+fx_name_base] = float(in_connections_to_block_size)  # destination
-                    self.graph.node[vertex]['ws-'+fx_name_base] = float(out_connections_to_block_size)  # source
+                        ## Local Rider Features
+                        self.graph.node[vertex]['wd-'+fx_name_base] = float(in_connections_to_block_size)  # destination
+                        self.graph.node[vertex]['ws-'+fx_name_base] = float(out_connections_to_block_size)  # source
 
-                    for attr in attrs:
-                        self.graph.node[vertex]['wda-'+attr+'-'+fx_name_base] = 0.0
-                        self.graph.node[vertex]['wsa-'+attr+'-'+fx_name_base] = 0.0
-
-                    if in_connections_to_block_size > 0:
                         for attr in attrs:
-                            for connection in in_connections_to_block:
-                                if attr == 'wgt':
-                                    self.graph.node[vertex]['wda-'+attr+'-'+fx_name_base] \
-                                        += self.graph[connection][vertex]['weight']
+                            self.graph.node[vertex]['wda-'+attr+'-'+fx_name_base] = 0.0
+                            self.graph.node[vertex]['wsa-'+attr+'-'+fx_name_base] = 0.0
 
-                    if out_connections_to_block_size > 0:
-                        for attr in attrs:
-                            for connection in out_connections_to_block:
-                                if attr == 'wgt':
-                                    self.graph.node[vertex]['wsa-'+attr+'-'+fx_name_base] \
-                                        += self.graph[vertex][connection]['weight']
+                        if in_connections_to_block_size > 0:
+                            for attr in attrs:
+                                for connection in in_connections_to_block:
+                                    if attr == 'wgt':
+                                        self.graph.node[vertex]['wda-'+attr+'-'+fx_name_base] \
+                                            += self.graph[connection][vertex]['weight']
 
-                    ## Egonet Rider Features
-                    self.graph.node[vertex]['wes0-'+fx_name_base] = 0.0
-                    self.graph.node[vertex]['wes1-'+fx_name_base] = 0.0
-                    self.graph.node[vertex]['wed0-'+fx_name_base] = 0.0
-                    self.graph.node[vertex]['wed1-'+fx_name_base] = 0.0
-                    self.graph.node[vertex]['xes0-'+fx_name_base] = 0.0
-                    self.graph.node[vertex]['xes1-'+fx_name_base] = 0.0
-                    self.graph.node[vertex]['xed0-'+fx_name_base] = 0.0
-                    self.graph.node[vertex]['xed1-'+fx_name_base] = 0.0
-                    for attr in attrs:
-                        self.graph.node[vertex]['wesa-'+attr+'0-'+fx_name_base] = 0.0
-                        self.graph.node[vertex]['xesa-'+attr+'0-'+fx_name_base] = 0.0
-                        self.graph.node[vertex]['weda-'+attr+'0-'+fx_name_base] = 0.0
-                        self.graph.node[vertex]['xeda-'+attr+'0-'+fx_name_base] = 0.0
-                        self.graph.node[vertex]['wesa-'+attr+'1-'+fx_name_base] = 0.0
-                        self.graph.node[vertex]['xesa-'+attr+'1-'+fx_name_base] = 0.0
-                        self.graph.node[vertex]['weda-'+attr+'1-'+fx_name_base] = 0.0
-                        self.graph.node[vertex]['xeda-'+attr+'1-'+fx_name_base] = 0.0
+                        if out_connections_to_block_size > 0:
+                            for attr in attrs:
+                                for connection in out_connections_to_block:
+                                    if attr == 'wgt':
+                                        self.graph.node[vertex]['wsa-'+attr+'-'+fx_name_base] \
+                                            += self.graph[vertex][connection]['weight']
 
                 for vertex in sorted(self.vertex_egonets.keys()):
-                    vertex_lvl_0_egonet = self.vertex_egonets[vertex][0]
-                    vertex_lvl_1_egonet = self.vertex_egonets[vertex][1]
+                    if vertex in block_neighbours:
+                        vertex_lvl_0_egonet = self.vertex_egonets[vertex][0]
+                        vertex_lvl_1_egonet = self.vertex_egonets[vertex][1]
 
-                    # Level 0 Egonet
-                    for n1 in vertex_lvl_0_egonet:
-                        in_neighbours = self.graph.predecessors(n1)
-                        out_neighbours = self.graph.successors(n1)
+                        # Level 0 Egonet
+                        for n1 in vertex_lvl_0_egonet:
+                            in_neighbours = self.graph.predecessors(n1)
+                            out_neighbours = self.graph.successors(n1)
 
-                        for n2 in in_neighbours:
-                            if n2 in vertex_lvl_0_egonet:
-                                self.graph.node[vertex]['wed0-'+fx_name_base] += self.graph.node[n2]['wd-'+fx_name_base]
-                                for attr in attrs:
-                                    if attr == 'wgt':
-                                        self.graph.node[vertex]['weda-'+attr+'0-'+fx_name_base] \
-                                            += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
-                            else:
-                                self.graph.node[vertex]['xed0-'+fx_name_base] += self.graph.node[n2]['wd-'+fx_name_base]
-                                for attr in attrs:
-                                    if attr == 'wgt':
-                                        self.graph.node[vertex]['xeda-'+attr+'0-'+fx_name_base] \
-                                            += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
+                            for n2 in in_neighbours:
+                                if n2 in vertex_lvl_0_egonet:
+                                    self.graph.node[vertex]['wed0-'+fx_name_base] += self.graph.node[n2]['wd-'+fx_name_base]
+                                    for attr in attrs:
+                                        if attr == 'wgt':
+                                            self.graph.node[vertex]['weda-'+attr+'0-'+fx_name_base] \
+                                                += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
+                                else:
+                                    self.graph.node[vertex]['xed0-'+fx_name_base] += self.graph.node[n2]['wd-'+fx_name_base]
+                                    for attr in attrs:
+                                        if attr == 'wgt':
+                                            self.graph.node[vertex]['xeda-'+attr+'0-'+fx_name_base] \
+                                                += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
 
-                        for n2 in out_neighbours:
-                            if n2 in vertex_lvl_0_egonet:
-                                self.graph.node[vertex]['wes0-'+fx_name_base] += self.graph.node[n2]['ws-'+fx_name_base]
-                                for attr in attrs:
-                                    if attr == 'wgt':
-                                        self.graph.node[vertex]['wesa-'+attr+'0-'+fx_name_base] \
-                                            += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
-                            else:
-                                self.graph.node[vertex]['xes0-'+fx_name_base] += self.graph.node[n2]['ws-'+fx_name_base]
-                                for attr in attrs:
-                                    if attr == 'wgt':
-                                        self.graph.node[vertex]['xesa-'+attr+'0-'+fx_name_base] \
-                                            += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
+                            for n2 in out_neighbours:
+                                if n2 in vertex_lvl_0_egonet:
+                                    self.graph.node[vertex]['wes0-'+fx_name_base] += self.graph.node[n2]['ws-'+fx_name_base]
+                                    for attr in attrs:
+                                        if attr == 'wgt':
+                                            self.graph.node[vertex]['wesa-'+attr+'0-'+fx_name_base] \
+                                                += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
+                                else:
+                                    self.graph.node[vertex]['xes0-'+fx_name_base] += self.graph.node[n2]['ws-'+fx_name_base]
+                                    for attr in attrs:
+                                        if attr == 'wgt':
+                                            self.graph.node[vertex]['xesa-'+attr+'0-'+fx_name_base] \
+                                                += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
 
-                    # Level 1 Egonet
-                    for n1 in vertex_lvl_1_egonet:
-                        in_neighbours = self.graph.predecessors(n1)
-                        out_neighbours = self.graph.successors(n1)
+                        # Level 1 Egonet
+                        for n1 in vertex_lvl_1_egonet:
+                            in_neighbours = self.graph.predecessors(n1)
+                            out_neighbours = self.graph.successors(n1)
 
-                        for n2 in in_neighbours:
-                            if n2 in vertex_lvl_0_egonet:
-                                self.graph.node[vertex]['wed1-'+fx_name_base] += self.graph.node[n2]['wd-'+fx_name_base]
-                                for attr in attrs:
-                                    if attr == 'wgt':
-                                        self.graph.node[vertex]['weda-'+attr+'1-'+fx_name_base] \
-                                            += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
-                            else:
-                                self.graph.node[vertex]['xed1-'+fx_name_base] += self.graph.node[n2]['wd-'+fx_name_base]
-                                for attr in attrs:
-                                    if attr == 'wgt':
-                                        self.graph.node[vertex]['xeda-'+attr+'1-'+fx_name_base] \
-                                            += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
+                            for n2 in in_neighbours:
+                                if n2 in vertex_lvl_0_egonet:
+                                    self.graph.node[vertex]['wed1-'+fx_name_base] += self.graph.node[n2]['wd-'+fx_name_base]
+                                    for attr in attrs:
+                                        if attr == 'wgt':
+                                            self.graph.node[vertex]['weda-'+attr+'1-'+fx_name_base] \
+                                                += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
+                                else:
+                                    self.graph.node[vertex]['xed1-'+fx_name_base] += self.graph.node[n2]['wd-'+fx_name_base]
+                                    for attr in attrs:
+                                        if attr == 'wgt':
+                                            self.graph.node[vertex]['xeda-'+attr+'1-'+fx_name_base] \
+                                                += self.graph.node[n2]['wda-'+attr+'-'+fx_name_base]
 
-                        for n2 in out_neighbours:
-                            if n2 in vertex_lvl_0_egonet:
-                                self.graph.node[vertex]['wes1-'+fx_name_base] += self.graph.node[n2]['ws-'+fx_name_base]
-                                for attr in attrs:
-                                    if attr == 'wgt':
-                                        self.graph.node[vertex]['wesa-'+attr+'1-'+fx_name_base] \
-                                            += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
-                            else:
-                                self.graph.node[vertex]['xes1-'+fx_name_base] += self.graph.node[n2]['ws-'+fx_name_base]
-                                for attr in attrs:
-                                    if attr == 'wgt':
-                                        self.graph.node[vertex]['xesa-'+attr+'1-'+fx_name_base] \
-                                            += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
+                            for n2 in out_neighbours:
+                                if n2 in vertex_lvl_0_egonet:
+                                    self.graph.node[vertex]['wes1-'+fx_name_base] += self.graph.node[n2]['ws-'+fx_name_base]
+                                    for attr in attrs:
+                                        if attr == 'wgt':
+                                            self.graph.node[vertex]['wesa-'+attr+'1-'+fx_name_base] \
+                                                += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
+                                else:
+                                    self.graph.node[vertex]['xes1-'+fx_name_base] += self.graph.node[n2]['ws-'+fx_name_base]
+                                    for attr in attrs:
+                                        if attr == 'wgt':
+                                            self.graph.node[vertex]['xesa-'+attr+'1-'+fx_name_base] \
+                                                += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
 
     def compute_primitive_features(self, rider_fx=False, rider_dir='INVALID_PATH'):
         # computes the primitive local features
@@ -276,6 +298,7 @@ class Features:
 
             self.compute_base_egonet_primitive_features(n1, ['wgt'], level_id='0')
             self.compute_base_egonet_primitive_features(n1, ['wgt'], level_id='1')
+        print 'Computed Primitive Features'
 
         if rider_fx:
             if not os.path.exists(rider_dir):
