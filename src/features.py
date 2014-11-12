@@ -325,6 +325,11 @@ class Features:
     def save_feature_matrix(self, out_file_name):
         graph_nodes = sorted(self.graph.nodes())
         feature_names = list(sorted(self.graph.node[graph_nodes[0]].keys()))
+        ff = open('feature-names-out.txt', 'w')
+        for feature in feature_names:
+            ff.write('%s,' % feature)
+        ff.close()
+
         fo = open(out_file_name, 'w')
         for node in graph_nodes:
             fo.write('%s' % node)

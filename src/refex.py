@@ -35,6 +35,8 @@ if __name__ == "__main__":
 
     # compute primitive/rider features
     fx.compute_primitive_features(rider_fx=args.rider, rider_dir=rider_dir)
+    fx.save_feature_matrix("intermediate.txt")
+    print 'Written Intermediate Fx to file'
 
     # compute initial feature matrix
     primitive_feature_matrix = fx.create_initial_feature_matrix()
