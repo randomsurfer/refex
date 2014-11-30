@@ -190,7 +190,7 @@ class Features:
 
             for i, line in enumerate(open(os.path.join(rider_dir, file_name))):
                 line = line.strip().split()
-                log_block_size = pow(2, len(line)+1)
+                log_block_size = pow(5, len(line)+1)
                 block_fx_name[i] = self.get_log_binned_fx_name(log_block_size, log_bins, file_name)
 
                 block = set([int(n) for n in line])
