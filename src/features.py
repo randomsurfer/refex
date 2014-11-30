@@ -163,6 +163,64 @@ class Features:
             self.graph.node[vertex]['weda-'+attr+'1-'+fx_name_base] = 0.0
             self.graph.node[vertex]['xeda-'+attr+'1-'+fx_name_base] = 0.0
 
+    def get_log_binned_fx_name(self, log_value, log_bins, file_name):
+        # returns the feature_name corresponding to this block size assigned bin
+        start = log_bins[0]
+        i = 0
+        for curr_bin in log_bins[1:]:
+            if start <= log_value < curr_bin:
+                return file_name + '_' + str(i)
+            start = curr_bin
+            i += 1
+        return file_name + '_' + str(i)
+
+    def compute_rider_binned_block_features(self, rider_dir, attrs=['wgt'], bins=15):
+        # Alternate log binned rider block features, binning to decrease the complexity
+        for file_name in os.listdir(rider_dir):
+            print 'RIDeR Features: ', file_name
+            block_sizes = []
+            block_fx_name = {}  # block_id -> feature_name
+            node_block = {}  # node -> block_id in the current rider
+
+            for line in open(os.path.join(rider_dir, file_name)):
+                line = line.strip().split()
+                block_sizes.append(len(line))
+
+            log_bins = np.logspace(min(block_sizes)+1, max(block_sizes)+1, bins)
+
+            for i, line in enumerate(open(os.path.join(rider_dir, file_name))):
+                line = line.strip().split()
+                log_block_size = np.log10(len(line)+1)
+                block_fx_name[i] = self.get_log_binned_fx_name(log_block_size, log_bins, file_name)
+
+                block = set([int(n) for n in line])
+                for n in block:
+                    n = int(n)
+                    node_block[n] = i
+
+            fx_names = list(set(block_fx_name.values()))
+
+            for vertex in self.graph.nodes():
+                in_neighbours = self.graph.predecessors(vertex)
+                out_neighbours = self.graph.successors(vertex)
+
+                for fx_name_base in fx_names:
+                    self.graph.node[vertex]['wd-'+fx_name_base] = 0.0  # destination
+                    self.graph.node[vertex]['ws-'+fx_name_base] = 0.0  # source
+                    for attr in attrs:
+                        self.graph.node[vertex]['wda-'+attr+'-'+fx_name_base] = 0.0
+                        self.graph.node[vertex]['wsa-'+attr+'-'+fx_name_base] = 0.0
+
+                for connection in in_neighbours:
+                    fx_name_to_be_updated = block_fx_name[node_block[connection]]
+                    self.graph.node[vertex]['wd-'+fx_name_to_be_updated] += 1.0
+                    self.graph.node[vertex]['wda-wgt-'+fx_name_base] += self.graph[connection][vertex]['weight']
+
+                for connection in out_neighbours:
+                    fx_name_to_be_updated = block_fx_name[node_block[connection]]
+                    self.graph.node[vertex]['ws-'+fx_name_to_be_updated] += 1.0
+                    self.graph.node[vertex]['wsa-wgt-'+fx_name_base] += self.graph[vertex][connection]['weight']
+
     def compute_rider_egonet_primitive_features(self, rider_dir, attrs=['wgt']):
         for file_name in os.listdir(rider_dir):
             print 'RIDeR Features: ', file_name
@@ -303,7 +361,8 @@ class Features:
         if rider_fx:
             if not os.path.exists(rider_dir):
                 raise Exception("RIDeR output directory is empty!")
-            self.compute_rider_egonet_primitive_features(rider_dir, ['wgt'])
+            # self.compute_rider_egonet_primitive_features(rider_dir, ['wgt'])
+            self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=10)
 
         self.no_of_vertices = self.graph.number_of_nodes()
         self.init_log_binned_fx_buckets()
