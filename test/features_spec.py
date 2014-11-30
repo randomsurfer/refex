@@ -70,7 +70,7 @@ class FeaturesSpec(unittest.TestCase):
         fx.load_graph("resources/sample_graph_2.txt")
         fx.compute_primitive_features(rider_fx=True, rider_dir="resources/riders/")
         for vertex in fx.graph.nodes():
-            self.assertEquals(len(fx.graph.node[vertex]), 268)
+            self.assertEquals(len(fx.graph.node[vertex]), 40)
 
     def test_should_compare_cols_within_maxdist(self):
         fx = features.Features()
