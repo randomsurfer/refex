@@ -163,12 +163,12 @@ class Features:
             self.graph.node[vertex]['weda-'+attr+'1-'+fx_name_base] = 0.0
             self.graph.node[vertex]['xeda-'+attr+'1-'+fx_name_base] = 0.0
 
-    def get_log_binned_fx_name(self, power_value, log_bins, file_name):
+    def digitize(self, log_value, log_bins, file_name):
         # returns the feature_name corresponding to this block size assigned bin
         start = log_bins[0]
         i = 0
         for curr_bin in log_bins[1:]:
-            if start <= power_value < curr_bin:
+            if start <= log_value < curr_bin:
                 return file_name + '_' + str(i)
             start = curr_bin
             i += 1
@@ -186,12 +186,12 @@ class Features:
                 line = line.strip().split()
                 block_sizes.append(len(line))
 
-            log_bins = np.logspace(min(block_sizes)+1, max(block_sizes)+1, bins, base=5.0)
+            log_bins = np.logspace(np.log10(min(block_sizes)+1), np.log10(max(block_sizes)+1), bins)
 
             for i, line in enumerate(open(os.path.join(rider_dir, file_name))):
                 line = line.strip().split()
-                log_block_size = pow(5, len(line)+1)
-                block_fx_name[i] = self.get_log_binned_fx_name(log_block_size, log_bins, file_name)
+                log_block_size = np.log10(len(line)+1)
+                block_fx_name[i] = self.digitize(log_block_size, log_bins, file_name)
 
                 block = set([int(n) for n in line])
                 for n in block:
