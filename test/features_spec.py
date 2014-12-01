@@ -70,7 +70,7 @@ class FeaturesSpec(unittest.TestCase):
         fx.load_graph("resources/sample_graph_2.txt")
         fx.compute_primitive_features(rider_fx=True, rider_dir="resources/riders/")
         for vertex in fx.graph.nodes():
-            self.assertEquals(len(fx.graph.node[vertex]), 36)
+            self.assertEquals(len(fx.graph.node[vertex]), 52)
 
     def test_should_compare_cols_within_maxdist(self):
         fx = features.Features()
@@ -104,6 +104,15 @@ class FeaturesSpec(unittest.TestCase):
         max_dist = 0.49
         actual = fx.fx_column_comparator(column_1, column_2, max_dist)
         self.assertFalse(actual)
+
+    def test_should_digitize_correctly(self):
+        fx = features.Features()
+        log_bins = np.logspace(np.log10(2), np.log10(20), num=15, endpoint=False)
+        self.assertEquals(log_bins.size, 15)
+        self.assertEquals(fx.digitize(2.0, log_bins=log_bins, file_name="sample"), "sample_0")
+        self.assertEquals(fx.digitize(5.0, log_bins=log_bins, file_name="sample"), "sample_5")
+        self.assertEquals(fx.digitize(15.0, log_bins=log_bins, file_name="sample"), "sample_13")
+        self.assertEquals(fx.digitize(20.0, log_bins=log_bins, file_name="sample"), "sample_14")
 
     def test_should_prune_similar_features(self):
         fx = features.Features()
