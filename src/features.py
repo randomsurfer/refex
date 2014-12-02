@@ -179,6 +179,8 @@ class Features:
         # Alternate log binned rider block features, binning to decrease the complexity
         for file_name in os.listdir(rider_dir):
             print 'RIDeR Features: ', file_name
+            if file_name == ".DS_Store":
+                continue
             block_sizes = []
             block_fx_name = {}  # block_id -> feature_name
             node_block = {}  # node -> block_id in the current rider
@@ -448,17 +450,17 @@ class Features:
             new_fx_list.append(fx_name + str(iter_no) + sum_fx + level_id)
             new_fx_list.append(fx_name + str(iter_no) + mean_fx + level_id)
 
-        level_id = '1'
-        for fx_name in fx_list:
-            fx_value = 0.0
-            for node in vertex_lvl_1_egonet:
-                fx_value += self.graph.node[node][fx_name]
-
-            self.graph.node[vertex][fx_name + str(iter_no) + sum_fx + level_id] = fx_value
-            self.graph.node[vertex][fx_name + str(iter_no) + mean_fx + level_id] = fx_value / vertex_lvl_1_egonet_size
-
-            new_fx_list.append(fx_name + str(iter_no) + sum_fx + level_id)
-            new_fx_list.append(fx_name + str(iter_no) + mean_fx + level_id)
+        # level_id = '1'
+        # for fx_name in fx_list:
+        #     fx_value = 0.0
+        #     for node in vertex_lvl_1_egonet:
+        #         fx_value += self.graph.node[node][fx_name]
+        #
+        #     self.graph.node[vertex][fx_name + str(iter_no) + sum_fx + level_id] = fx_value
+        #     self.graph.node[vertex][fx_name + str(iter_no) + mean_fx + level_id] = fx_value / vertex_lvl_1_egonet_size
+        #
+        #     new_fx_list.append(fx_name + str(iter_no) + sum_fx + level_id)
+        #     new_fx_list.append(fx_name + str(iter_no) + mean_fx + level_id)
 
         return new_fx_list
 
