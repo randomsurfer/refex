@@ -223,6 +223,18 @@ class Features:
                     self.graph.node[vertex]['ws-'+fx_name_to_be_updated] += 1.0
                     self.graph.node[vertex]['wsa-wgt-'+fx_name_base] += self.graph[vertex][connection]['weight']
 
+    def only_riders(self, graph_file, rider_dir, bins=15):
+        # Compute rider features. Code is redundant, accommodates an independent riders flow in riders.py
+        # This will screw the graph features if used with anything else, pls refrain from doing that.
+        self.load_graph(graph_file)
+        self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins)
+        self.no_of_vertices = self.graph.number_of_nodes()
+        self.init_log_binned_fx_buckets()
+
+        fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+        self.compute_log_binned_features(fx_names)
+        return self.create_initial_feature_matrix()
+
     def compute_rider_egonet_primitive_features(self, rider_dir, attrs=['wgt']):
         for file_name in os.listdir(rider_dir):
             print 'RIDeR Features: ', file_name
