@@ -27,7 +27,7 @@ class NMF_Base(object):
         self.default_max_iter = default_max_iter
         self.default_max_time = default_max_time
 
-    def run(self, A, k, init=None, max_iter=None, max_time=None, verbose=0):
+    def run(self, A, k, init=None, max_iter=None, max_time=None, verbose=-1):
         """ Run a NMF algorithm
 
         Parameters

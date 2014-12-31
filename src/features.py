@@ -177,8 +177,8 @@ class Features:
 
     def compute_rider_binned_block_features(self, rider_dir, attrs=['wgt'], bins=15):
         # Alternate log binned rider block features, binning to decrease the complexity
+        fx_count = 0
         for file_name in os.listdir(rider_dir):
-            print 'RIDeR Features: ', file_name
             if file_name == ".DS_Store":
                 continue
             block_sizes = []
@@ -222,6 +222,7 @@ class Features:
                     fx_name_to_be_updated = block_fx_name[node_block[connection]]
                     self.graph.node[vertex]['ws-'+fx_name_to_be_updated] += 1.0
                     self.graph.node[vertex]['wsa-wgt-'+fx_name_base] += self.graph[vertex][connection]['weight']
+            print 'RIDeR File: %s' % file_name
 
     def only_riders(self, graph_file, rider_dir, bins=15):
         # Compute rider features. Code is redundant, accommodates an independent riders flow in riders.py
@@ -233,7 +234,19 @@ class Features:
 
         fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
         self.compute_log_binned_features(fx_names)
-        return self.create_initial_feature_matrix()
+
+        graph_nodes = sorted(self.graph.nodes())
+        fx_names = []
+        for fx_name in sorted(self.graph.node[graph_nodes[0]].keys()):
+            fx_names.append(fx_name)
+
+        fx_matrix = []
+        for node in graph_nodes:
+            feature_row = []
+            for fx_name in fx_names:
+                feature_row.append(self.graph.node[node][fx_name])
+            fx_matrix.append(tuple(feature_row))
+        return np.array(fx_matrix)
 
     def compute_rider_egonet_primitive_features(self, rider_dir, attrs=['wgt']):
         for file_name in os.listdir(rider_dir):
