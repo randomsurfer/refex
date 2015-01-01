@@ -224,6 +224,46 @@ class Features:
                     self.graph.node[vertex]['wsa-wgt-'+fx_name_base] += self.graph[vertex][connection]['weight']
             print 'RIDeR File: %s' % file_name
 
+    def compute_only_riders_binned_block_features(self, rider_dir, bins=15):
+        # Alternate log binned rider block features, binning to decrease the complexity
+        fx_count = 0
+        for file_name in os.listdir(rider_dir):
+            if file_name == ".DS_Store":
+                continue
+            block_sizes = []
+            block_fx_name = {}  # block_id -> feature_name
+            node_block = {}  # node -> block_id in the current rider
+
+            for line in open(os.path.join(rider_dir, file_name)):
+                line = line.strip().split()
+                block_sizes.append(len(line))
+
+            log_bins = np.logspace(np.log10(min(block_sizes)+1), np.log10(max(block_sizes)+1), bins)
+
+            for i, line in enumerate(open(os.path.join(rider_dir, file_name))):
+                line = line.strip().split()
+                block_size = len(line)+1
+                block_fx_name[i] = self.digitize(block_size, log_bins, file_name)
+
+                block = set([int(n) for n in line])
+                for n in block:
+                    n = int(n)
+                    node_block[n] = i
+            fx_names = list(set(block_fx_name.values()))
+
+            for vertex in self.graph.nodes():
+                in_neighbours = self.graph.predecessors(vertex)
+                # out_neighbours = self.graph.successors(vertex)
+                neighbours = in_neighbours # list(set(in_neighbours.extend(out_neighbours)))
+
+                for fx_name_base in fx_names:
+                    self.graph.node[vertex][fx_name_base] = 0.0  # destination
+
+                for connection in neighbours:
+                    fx_name_to_be_updated = block_fx_name[node_block[connection]]
+                    self.graph.node[vertex][fx_name_to_be_updated] += 1.0
+            print 'RIDeR File: %s' % file_name
+
     def only_riders(self, graph_file, rider_dir, bins=15):
         # Compute rider features. Code is redundant, accommodates an independent riders flow in riders.py
         # This will screw the graph features if used with anything else, pls refrain from doing that.
