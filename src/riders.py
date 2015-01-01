@@ -3,6 +3,7 @@ import mdl
 import argparse
 import numpy as np
 from nonnegfac.nmf import NMF_ANLS_BLOCKPIVOT
+from nonnegfac.nmf import NMF_ANLS_AS_NUMPY
 
 
 if __name__ == "__main__":
@@ -11,6 +12,7 @@ if __name__ == "__main__":
     argument_parser.add_argument('-b', '--bins', help='bins for rider features', required=True)
     argument_parser.add_argument('-rd', '--rider-dir', help='rider directory', required=True)
     argument_parser.add_argument('-o', '--output-prefix', help='output prefix for factors', required=True)
+    argument_parser.add_argument('-i', '--iter-start', help='start MDL from i^th role iteration', required=True)
 
     args = argument_parser.parse_args()
 
@@ -18,6 +20,7 @@ if __name__ == "__main__":
     rider_dir = args.rider_dir
     bins = int(args.bins)
     out_prefix = args.output_prefix
+    iter_start = int(args.iter_start)
 
     fx = features.Features()
 
@@ -35,8 +38,8 @@ if __name__ == "__main__":
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
 
-    for bases in xrange(1, max_roles + 1):
-        W, H, info = NMF_ANLS_BLOCKPIVOT().run(actual_fx_matrix, bases, max_iter=50)
+    for bases in xrange(iter_start, max_roles + 1):
+        W, H, info = NMF_ANLS_AS_NUMPY().run(actual_fx_matrix, bases, max_iter=50)
         estimated_fx_matrix = W.dot(np.transpose(H))
 
         code_length_W = mdlo.get_huffman_code_length(W)
