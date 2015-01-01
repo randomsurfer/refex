@@ -40,7 +40,10 @@ class MDL:
             return sum(value * len(code) for value, code in zip(frequency_values, huffman_codes))  # total sym bits
 
     def get_reconstruction_cost(self, actual_matrix, estimated_matrix):
-        # KLD based reconstruction error. For more details refer
+        # KLD based reconstruction error.
+        # For more details please refer:
+        # Algorithms for Non-negative Matrix Factorization by Lee and Seung, NIPS 2001.
+
         reconstruction_error = 0.0
         for (i, j), value in np.ndenumerate(actual_matrix):
             if i == j:
