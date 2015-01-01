@@ -178,7 +178,7 @@ class Features:
     def compute_rider_binned_block_features(self, rider_dir, attrs=['wgt'], bins=15):
         # Alternate log binned rider block features, binning to decrease the complexity
         fx_count = 0
-        for file_name in os.listdir(rider_dir):
+        for file_name in sorted(os.listdir(rider_dir)):
             if file_name == ".DS_Store":
                 continue
             block_sizes = []
