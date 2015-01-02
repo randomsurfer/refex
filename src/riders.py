@@ -2,8 +2,7 @@ import features
 import mdl
 import argparse
 import numpy as np
-from nonnegfac.nmf import NMF_ANLS_BLOCKPIVOT
-from nonnegfac.nmf import NMF_ANLS_AS_NUMPY
+import nimfa
 
 
 if __name__ == "__main__":
@@ -39,15 +38,19 @@ if __name__ == "__main__":
     min_des_not_changed_counter = 0
 
     for bases in xrange(iter_start, max_roles + 1):
-        W, H, info = NMF_ANLS_AS_NUMPY().run(actual_fx_matrix, bases, max_iter=50)
-        estimated_fx_matrix = W.dot(np.transpose(H))
+        fctr = nimfa.mf(actual_fx_matrix, rank=bases, method="lsnmf", max_iter=15)
+        fctr_res = nimfa.mf_run(fctr)
+        W = fctr_res.basis()
+        H = fctr_res.coef()
 
         code_length_W = mdlo.get_huffman_code_length(W)
         code_length_H = mdlo.get_huffman_code_length(H)
-        # model_cost = code_length_W + code_length_H  # For total bit length
-        model_cost = code_length_W * (W.shape[0] + W.shape[1]) + code_length_H * (H.shape[0] + H.shape[1])  # for avg bit len
 
-        reconstruction_error = mdlo.get_reconstruction_cost(actual_fx_matrix, estimated_fx_matrix)
+        # For total bit length:
+        # model_cost = code_length_W + code_length_H  # For total bit length
+        # For avg. symbol bit length:
+        model_cost = code_length_W * (W.shape[0] + W.shape[1]) + code_length_H * (H.shape[0] + H.shape[1])
+        reconstruction_error = fctr_res.distance(metric='kl')
 
         description_length = model_cost + reconstruction_error
 
