@@ -11,7 +11,6 @@ if __name__ == "__main__":
     argument_parser.add_argument('-b', '--bins', help='bins for rider features', required=True)
     argument_parser.add_argument('-rd', '--rider-dir', help='rider directory', required=True)
     argument_parser.add_argument('-o', '--output-prefix', help='output prefix for factors', required=True)
-    argument_parser.add_argument('-i', '--iter-start', help='start MDL from i^th role iteration', required=True)
 
     args = argument_parser.parse_args()
 
@@ -19,7 +18,6 @@ if __name__ == "__main__":
     rider_dir = args.rider_dir
     bins = int(args.bins)
     out_prefix = args.output_prefix
-    iter_start = int(args.iter_start)
 
     fx = features.Features()
 
@@ -37,8 +35,8 @@ if __name__ == "__main__":
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
 
-    for bases in xrange(iter_start, max_roles + 1):
-        fctr = nimfa.mf(actual_fx_matrix, rank=bases, method="lsnmf", max_iter=15)
+    for rank in xrange(1, max_roles + 1):
+        fctr = nimfa.mf(actual_fx_matrix, rank=rank, method="lsnmf", max_iter=15)
         fctr_res = nimfa.mf_run(fctr)
         W = fctr_res.basis()
         H = fctr_res.coef()
@@ -55,7 +53,7 @@ if __name__ == "__main__":
         description_length = model_cost + reconstruction_error
 
         print 'Number of Roles: %s, Model Cost: %.2f, Reconstruct Err: %.2f, Description Length: %.2f' % \
-              (bases, model_cost, reconstruction_error, description_length)
+              (rank, model_cost, reconstruction_error, description_length)
 
         if description_length < minimum_description_length:
             minimum_description_length = description_length
@@ -64,7 +62,7 @@ if __name__ == "__main__":
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 5:
+            if min_des_not_changed_counter == 10:
                 break
 
     print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_W.shape[1])
