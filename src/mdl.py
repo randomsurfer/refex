@@ -48,7 +48,8 @@ class MDL:
         for (i, j), value in np.ndenumerate(actual_matrix):
             if i == j:
                 continue
-            if estimated_matrix[i][j] > 0.0 and actual_matrix[i][j] / estimated_matrix[i][j] > 1.0:
-                reconstruction_error += (actual_matrix[i][j] * np.log2(actual_matrix[i][j] / estimated_matrix[i][j])
+            if actual_matrix[i][j] < 1e-10 or estimated_matrix[i][j] < 1e-10:
+                continue
+            reconstruction_error += (actual_matrix[i][j] * np.log2(actual_matrix[i][j] / estimated_matrix[i][j])
                                          - actual_matrix[i][j] + estimated_matrix[i][j])
         return reconstruction_error
