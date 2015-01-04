@@ -208,20 +208,20 @@ class Features:
 
                 for fx_name_base in fx_names:
                     self.graph.node[vertex]['wd-'+fx_name_base] = 0.0  # destination
-                    self.graph.node[vertex]['ws-'+fx_name_base] = 0.0  # source
+                    # self.graph.node[vertex]['ws-'+fx_name_base] = 0.0  # source
                     for attr in attrs:
                         self.graph.node[vertex]['wda-'+attr+'-'+fx_name_base] = 0.0
-                        self.graph.node[vertex]['wsa-'+attr+'-'+fx_name_base] = 0.0
+                        # self.graph.node[vertex]['wsa-'+attr+'-'+fx_name_base] = 0.0
 
                 for connection in in_neighbours:
                     fx_name_to_be_updated = block_fx_name[node_block[connection]]
                     self.graph.node[vertex]['wd-'+fx_name_to_be_updated] += 1.0
                     self.graph.node[vertex]['wda-wgt-'+fx_name_base] += self.graph[connection][vertex]['weight']
 
-                for connection in out_neighbours:
-                    fx_name_to_be_updated = block_fx_name[node_block[connection]]
-                    self.graph.node[vertex]['ws-'+fx_name_to_be_updated] += 1.0
-                    self.graph.node[vertex]['wsa-wgt-'+fx_name_base] += self.graph[vertex][connection]['weight']
+                # for connection in out_neighbours:
+                #     fx_name_to_be_updated = block_fx_name[node_block[connection]]
+                #     self.graph.node[vertex]['ws-'+fx_name_to_be_updated] += 1.0
+                #     self.graph.node[vertex]['wsa-wgt-'+fx_name_base] += self.graph[vertex][connection]['weight']
             print 'RIDeR File: %s' % file_name
 
     def compute_only_riders_binned_block_features(self, rider_dir, bins=15):
