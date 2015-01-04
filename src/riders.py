@@ -2,7 +2,8 @@ import features
 import mdl
 import argparse
 import numpy as np
-import pymf
+import nimfa
+# import pymf
 
 
 if __name__ == "__main__":
@@ -36,11 +37,11 @@ if __name__ == "__main__":
     min_des_not_changed_counter = 0
 
     for rank in xrange(1, max_roles + 1):
-        nmf_mdl = pymf.NMF(actual_fx_matrix, num_bases=rank)
-        nmf_mdl.factorize(niter=30)
-        W = nmf_mdl.W
-        H = nmf_mdl.H
-        estimated_matrix = np.dot(W, H)
+        fctr = nimfa.mf(actual_fx_matrix, rank=rank, method="lsnmf", max_iter=100)
+        fctr_res = nimfa.mf_run(fctr)
+        W = np.asarray(fctr_res.basis())
+        H = np.asarray(fctr_res.coef())
+        # estimated_matrix = np.asarray(np.dot(W, H))
 
         code_length_W = mdlo.get_huffman_code_length(W)
         code_length_H = mdlo.get_huffman_code_length(H)
@@ -49,7 +50,7 @@ if __name__ == "__main__":
         # model_cost = code_length_W + code_length_H  # For total bit length
         # For avg. symbol bit length:
         model_cost = code_length_W * (W.shape[0] + W.shape[1]) + code_length_H * (H.shape[0] + H.shape[1])
-        reconstruction_error = mdlo.get_reconstruction_error(actual_fx_matrix, estimated_matrix)
+        reconstruction_error = fctr_res.distance(metric='kl')
 
         description_length = model_cost + reconstruction_error
 

@@ -53,3 +53,9 @@ class MDL:
             reconstruction_error += (actual_matrix[i][j] * np.log2(actual_matrix[i][j] / estimated_matrix[i][j])
                                          - actual_matrix[i][j] + estimated_matrix[i][j])
         return reconstruction_error
+
+    def get_log_likelihood(self, actual_matrix, estimated_matrix):
+        a = list(actual_matrix.flatten())
+        e = list(estimated_matrix.flatten())
+        print a
+        print e
