@@ -1,4 +1,5 @@
 numpy==1.9.0
 scipy==0.14.0
-nimfa==1.0
+pymf==0.1.9
+cvxopt==1.1.7
 networkx==1.9

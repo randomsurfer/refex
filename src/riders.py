@@ -2,7 +2,7 @@ import features
 import mdl
 import argparse
 import numpy as np
-import nimfa
+import pymf
 
 
 if __name__ == "__main__":
@@ -36,10 +36,11 @@ if __name__ == "__main__":
     min_des_not_changed_counter = 0
 
     for rank in xrange(1, max_roles + 1):
-        fctr = nimfa.mf(actual_fx_matrix, rank=rank, method="lsnmf", max_iter=50)
-        fctr_res = nimfa.mf_run(fctr)
-        W = fctr_res.basis()
-        H = fctr_res.coef()
+        nmf_mdl = pymf.NMF(actual_fx_matrix, num_bases=rank)
+        nmf_mdl.factorize(niter=30)
+        W = nmf_mdl.W
+        H = nmf_mdl.H
+        estimated_matrix = np.dot(W, H)
 
         code_length_W = mdlo.get_huffman_code_length(W)
         code_length_H = mdlo.get_huffman_code_length(H)
@@ -48,12 +49,9 @@ if __name__ == "__main__":
         # model_cost = code_length_W + code_length_H  # For total bit length
         # For avg. symbol bit length:
         model_cost = code_length_W * (W.shape[0] + W.shape[1]) + code_length_H * (H.shape[0] + H.shape[1])
-        reconstruction_error = fctr_res.distance(metric='kl')
+        reconstruction_error = mdlo.get_reconstruction_error(actual_fx_matrix, estimated_matrix)
 
         description_length = model_cost + reconstruction_error
-
-        print 'Number of Roles: %s, Model Cost: %.2f, Reconstruct Err: %.2f, Description Length: %.2f' % \
-              (rank, model_cost, reconstruction_error, description_length)
 
         if description_length < minimum_description_length:
             minimum_description_length = description_length
@@ -62,9 +60,13 @@ if __name__ == "__main__":
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 10:
+            if min_des_not_changed_counter == 30:
                 break
 
+        print 'Number of Roles: %s, Model Cost: %.2f, Reconstruct Err: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
+              % (rank, model_cost, reconstruction_error, description_length, minimum_description_length, best_W.shape[1])
+
+    print 'MDL has not changed for these many iters:', min_des_not_changed_counter
     print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_W.shape[1])
     np.savetxt(out_prefix+"-nodeRoles.txt", X=best_W, delimiter=',')
     np.savetxt(out_prefix+"-rolesFeatures.txt", X=best_H, delimiter=',')
