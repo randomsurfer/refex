@@ -61,7 +61,7 @@ if __name__ == "__main__":
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 20:
+            if min_des_not_changed_counter == 5:
                 break
 
         print 'Number of Roles: %s, Model Cost: %.2f, Reconstruct Err: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
