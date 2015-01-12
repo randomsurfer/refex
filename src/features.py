@@ -194,6 +194,43 @@ class Features:
             i += 1
         return file_name + '_' + str(i)
 
+    def dyn_floored_digitize(self, block_size, bin_dict, fx_names_dict, file_name):
+        # floor the block size to the nearest one from the bin_dict for that particular file name
+        if file_name not in bin_dict:
+            raise Exception("Rider Partition not the same!")
+        fx_name = ""
+        log_bins = bin_dict[file_name]
+        start = log_bins[0]
+        i = 0
+        assigned = False
+        for curr_bin in log_bins[1:]:
+            if start <= block_size < curr_bin:
+                fx_name = file_name + '_' + str(i)
+                assigned = True
+                break
+            start = curr_bin
+            i += 1
+        if not assigned:
+            fx_name = file_name + '_' + str(i)
+
+        fx_name_values = fx_names_dict[file_name]
+        # check if the assigned bin in assigned values of the original feature space,
+        # if NOT, floor it to the nearest feature name
+        if fx_name not in fx_name_values:
+            index = int(fx_name.split('_')[1])
+            valid_indices = sorted([int(name.split('_')[1]) for name in fx_name_values])
+            start = valid_indices[0]
+            assigned = False
+            for curr_idx in valid_indices[1:]:
+                if start <= index < curr_idx:
+                    fx_name = file_name + '_' + str(index)
+                    assigned = True
+                    break
+                start = curr_idx
+            if not assigned:
+                fx_name = file_name + '_' + str(valid_indices[-1])
+        return fx_name
+
     def compute_rider_binned_block_features(self, rider_dir, attrs=['wgt'], bins=15):
         # Alternate log binned rider block features, binning to decrease the complexity
         fx_count = 0
@@ -243,11 +280,121 @@ class Features:
                     self.graph.node[vertex]['wsa-wgt-'+fx_name_base] += self.graph[vertex][connection]['weight']
             print 'RIDeR File: %s' % file_name
 
+    def dyn_rider_binned_block_features(self, rider_dir, bin_dict, fx_names_dict, attrs=['wgt']):
+        # Alternate log binned rider block features, binning to decrease the complexity
+        fx_count = 0
+        for file_name in sorted(os.listdir(rider_dir)):
+            if file_name == ".DS_Store":
+                continue
+            block_sizes = []
+            block_fx_name = {}  # block_id -> feature_name
+            node_block = {}  # node -> block_id in the current rider
+
+            for line in open(os.path.join(rider_dir, file_name)):
+                line = line.strip().split()
+                block_sizes.append(len(line))
+
+            for i, line in enumerate(open(os.path.join(rider_dir, file_name))):
+                line = line.strip().split()
+                block_size = len(line)+1
+                block_fx_name[i] = self.dyn_floored_digitize(block_size, bin_dict, fx_names_dict, file_name)
+
+                block = set([int(n) for n in line])
+                for n in block:
+                    n = int(n)
+                    node_block[n] = i
+            # fx_names = list(set(block_fx_name.values()))
+            # The fx_names for dyn_rider are from the riders for base network at time t.
+            # print 'Derived Set diff: ', set(block_fx_name.values())
+            # print 'Length of Base Set: ', set(fx_names_dict[file_name])#, set(block_fx_name.values())
+            fx_names = list(set(fx_names_dict[file_name]))
+
+            for vertex in self.graph.nodes():
+                in_neighbours = self.graph.predecessors(vertex)
+                out_neighbours = self.graph.successors(vertex)
+
+                for fx_name_base in fx_names:
+                    self.graph.node[vertex]['wd-'+fx_name_base] = 0.0  # destination
+                    self.graph.node[vertex]['ws-'+fx_name_base] = 0.0  # source
+                    for attr in attrs:
+                        self.graph.node[vertex]['wda-'+attr+'-'+fx_name_base] = 0.0
+                        self.graph.node[vertex]['wsa-'+attr+'-'+fx_name_base] = 0.0
+
+                for connection in in_neighbours:
+                    fx_name_to_be_updated = block_fx_name[node_block[connection]]
+                    if fx_name_to_be_updated not in fx_names:
+                        continue
+                    self.graph.node[vertex]['wd-'+fx_name_to_be_updated] += 1.0
+                    self.graph.node[vertex]['wda-wgt-'+fx_name_base] += self.graph[connection][vertex]['weight']
+
+                for connection in out_neighbours:
+                    fx_name_to_be_updated = block_fx_name[node_block[connection]]
+                    if fx_name_to_be_updated not in fx_names:
+                        continue
+                    self.graph.node[vertex]['ws-'+fx_name_to_be_updated] += 1.0
+                    self.graph.node[vertex]['wsa-wgt-'+fx_name_base] += self.graph[vertex][connection]['weight']
+            print 'RIDeR File: %s' % file_name
+
+    def dyn_base_fx(self, base_rider_dir, bins=15):
+        fx_names_dict = {}  # key -> file_name (partition), value -> [feature names]
+        fx_bins_dict = {}  # key -> file_name, value -> [log scale]
+        for file_name in sorted(os.listdir(base_rider_dir)):
+            if file_name == ".DS_Store":
+                continue
+            block_sizes = []
+            block_fx_name = {}  # block_id -> feature_name
+            node_block = {}  # node -> block_id in the current rider
+
+            for line in open(os.path.join(base_rider_dir, file_name)):
+                line = line.strip().split()
+                block_sizes.append(len(line))
+
+            log_bins = np.logspace(np.log10(min(block_sizes)+1), np.log10(max(block_sizes)+1), bins)
+
+            for i, line in enumerate(open(os.path.join(base_rider_dir, file_name))):
+                line = line.strip().split()
+                block_size = len(line)+1
+                block_fx_name[i] = self.digitize(block_size, log_bins, file_name)
+
+                block = set([int(n) for n in line])
+                for n in block:
+                    n = int(n)
+                    node_block[n] = i
+            fx_names = list(set(block_fx_name.values()))
+            fx_names_dict[file_name] = fx_names
+            fx_bins_dict[file_name] = log_bins
+        return fx_names_dict, fx_bins_dict
+
     def only_riders(self, graph_file, rider_dir, bins=15):
         # Compute rider features. Code is redundant, accommodates an independent riders flow in riders.py
         # This will screw the graph features if used with anything else, pls refrain from doing that.
         self.load_graph(graph_file)
         self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins)
+        self.no_of_vertices = self.graph.number_of_nodes()
+        self.init_log_binned_fx_buckets()
+
+        fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+        self.compute_log_binned_features(fx_names)
+
+        graph_nodes = sorted(self.graph.nodes())
+        fx_names = []
+        for fx_name in sorted(self.graph.node[graph_nodes[0]].keys()):
+            fx_names.append(fx_name)
+
+        fx_matrix = []
+        for node in graph_nodes:
+            feature_row = []
+            for fx_name in fx_names:
+                feature_row.append(self.graph.node[node][fx_name])
+            fx_matrix.append(tuple(feature_row))
+        return np.array(fx_matrix)
+
+    def dyn_rider(self, graph_file, num_nodes, base_rider_dir, curr_rider_dir, bins=15):
+        self.load_graph_with_fixed_vertices(graph_file, num_nodes)
+        fx_names_dict, fx_bins_dict = self.dyn_base_fx(base_rider_dir, bins=bins)
+        self.dyn_rider_binned_block_features(curr_rider_dir, fx_bins_dict, fx_names_dict)
+
+
         self.no_of_vertices = self.graph.number_of_nodes()
         self.init_log_binned_fx_buckets()
 

@@ -1,13 +1,15 @@
 import features
 import argparse
-import os
 import numpy as np
-from scipy.optimize import nnls as opt
+import scipy.optimize as opt
+import mdl
+import nimfa
 
 def estimate_W(V, H):
     W = np.zeros((V.shape[0], H.shape[0]))
-    for j in xrange(0, V.shape[0]):
-        res = opt.nnls(H, V[j, :].toarray()[0, :])
+    print V.shape, H.shape
+    for j in xrange(0, W.shape[0]):
+        res = opt.nnls(H.T, V[j, :])
         W[j, :] = res[0]
     return W
 
@@ -21,64 +23,43 @@ def load_role_fx_matrix(rf_matrix_file):
     return np.asarray(matrix)
 
 
-def get_base_features(base_fx_dir, bins=15):
-    base_features = {}
-    for file_name in sorted(os.listdir(base_fx_dir)):
-        if file_name == ".DS_Store":
-            continue
-        block_sizes = []
-
-        for line in open(os.path.join(base_fx_dir, file_name)):
-            line = line.strip().split()
-            block_sizes.append(len(line))
-        log_bins = np.logspace(np.log10(min(block_sizes)+1), np.log10(max(block_sizes)+1), bins)
-        base_features[file_name] = log_bins
-
-
-def digitize(block_size, log_bins, file_name):
-    # block_size_value IS NOT the log10(block_size)
-    # returns the feature_name corresponding to this block size assigned bin
-    start = log_bins[0]
-    i = 0
-    for curr_bin in log_bins[1:]:
-        if start <= block_size < curr_bin:
-            return file_name + '_' + str(i)
-        start = curr_bin
-        i += 1
-
-    # if here => value is greater than last bin value in the original feature space
-    # return None and do a none check in the function that calls this one.
-    return "DISCARD"
-
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser(prog='dynamic riders')
-    argument_parser.add_argument('-g', '--init-graph', help='initial graph', required=True)
-    argument_parser.add_argument('-gd', '--graph-dir', help='graph dir', required=True)
-    argument_parser.add_argument('-bfd', '--base-fx-dir', help='base features directory', required=True)
+    argument_parser.add_argument('-g', '--graph', help='current graph', required=True)
+    argument_parser.add_argument('-bfd', '--base-rider-dir', help='base rider directory', required=True)
     argument_parser.add_argument('-rf', '--role-feature', help='input role feature matrix', required=True)
     # argument_parser.add_argument('-b', '--bins', help='bins for rider features', required=True)
     argument_parser.add_argument('-rd', '--rider-dir', help='rider directory', required=True)
     # argument_parser.add_argument('-dn', '--dir-no', help='max timestamp directory number', required=True)
-    # argument_parser.add_argument('-o', '--output-dir', help='output dir', required=True)
+    argument_parser.add_argument('-o', '--output-dir', help='output dir', required=True)
 
     args = argument_parser.parse_args()
 
-    initial_graph = args.init_graph
-    graph_dir = args.graph_dir
-    base_fx_dir = args.base_fx_dir
+    curr_graph = args.graph
+    base_fx_dir = args.base_rider_dir
     rf_matrix = args.role_feature
     rider_dir = args.rider_dir
-    # bins = int(args.bins)
-    # max_dir_no = int(args.dir_no)
-    # out_dir = args.output_dir
+    out_dir = args.output_dir
     H = load_role_fx_matrix(rf_matrix)
-    print H.shape
-    fx = features.Features()
-    actual_matrix = fx.only_riders(graph_file=initial_graph,rider_dir=rider_dir, bins=15)
-    print actual_matrix.shape
 
+    losses = []
+    original = []
 
+    mdlo = mdl.MDL(15)
 
-    # fx = features.Features()
+    for i in xrange(2, 13):
+        fx = features.Features()
+        actual_matrix = fx.dyn_rider(curr_graph, 151, base_fx_dir, rider_dir+'/'+str(i)+'/', bins=15)
+        # W = estimate_W(actual_matrix, H)
+        # losses.append(mdlo.get_reconstruction_error(actual_matrix, W.dot(H)))
+        out_prefix = out_dir + '/' + str(i)
 
-
+        fctr = nimfa.mf(actual_matrix, rank=8, method="lsnmf", max_iter=100)
+        fctr_res = nimfa.mf_run(fctr)
+        Wa = np.asarray(fctr_res.basis())
+        np.savetxt(out_prefix+"-nodeRoles.txt", X=Wa, delimiter=',')
+        # Ha = np.asarray(fctr_res.coef())
+        # estimated_matrix = np.asarray(np.dot(Wa, Ha))
+        # original.append(mdlo.get_reconstruction_error(actual_matrix, estimated_matrix))
+    # print losses
+    # print original
