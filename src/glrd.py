@@ -72,7 +72,7 @@ for k in xrange(r):
 
     # Solve for optimal F(k)(.)
     G_k = G[:, k]
-    x_star = linalg.lstsq(R, G_k.T)[0].T
+    x_star = linalg.lstsq(R, G_k)[0]
     x = cvx.Variable(x_star.shape[0])
     objective = cvx.Minimize(cvx.norm2(x_star - x))
     constraints = [cvx.norm1(x) <= 0.5, x >= 0.0]
