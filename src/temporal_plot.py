@@ -49,7 +49,10 @@ ind = np.arange(12)
 bottom = np.cumsum(one_person, axis=0)
 
 # print one_person.shape, bottom.shape
-
+plt.ylim([0.0,1.0])
+plt.xticks([])
+plt.yticks([])
+plt.title("107")
 plt.bar(ind, one_person[0], color=colors[0], width=1, edgecolor='none')
 
 for j in xrange(1, one_person.shape[0]):
