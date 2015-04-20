@@ -53,7 +53,7 @@ def glrd_sparse(V, G, F, r, err_V, err_F):
         x_star_G = linalg.lstsq(R.T, F_k.T)[0].T
         x_G = cvx.Variable(x_star_G.shape[0])
         objective_G = cvx.Minimize(cvx.norm2(x_star_G - x_G))
-        constraints_G = [cvx.norm1(x_G) <= err_V, x_G >= 0.0]
+        constraints_G = [cvx.norm1(x_G) <= err_V, x_G >= 0]
         prob_G = cvx.Problem(objective_G, constraints_G)
         prob_G.solve()
         G_k_min = np.asarray(x_G.value)
@@ -64,7 +64,7 @@ def glrd_sparse(V, G, F, r, err_V, err_F):
         x_star_F = linalg.lstsq(R, G_k)[0]
         x_F = cvx.Variable(x_star_F.shape[0])
         objective_F = cvx.Minimize(cvx.norm2(x_star_F - x_F))
-        constraints_F = [cvx.norm1(x_F) <= err_F, x_F >= 0.0]
+        constraints_F = [cvx.norm1(x_F) <= err_F, x_F >= 0]
         prob_F = cvx.Problem(objective_F, constraints_F)
         prob_F.solve()
         F_k_min = np.asarray(x_F.value)
@@ -89,7 +89,7 @@ def glrd_diverse(V, G, F, r, err_V, err_F):
 
         objective_G = cvx.Minimize(cvx.norm2(x_star_G - x_G))
 
-        constraints_G = [x_G >= 0.0]
+        constraints_G = [x_G >= 0]
         for j in xrange(r):
             if j != k:
                 constraints_G += [x_G.T * G[:, j] <= err_V]
@@ -105,7 +105,7 @@ def glrd_diverse(V, G, F, r, err_V, err_F):
         x_F = cvx.Variable(x_star_F.shape[0])
         objective_F = cvx.Minimize(cvx.norm2(x_star_F - x_F))
 
-        constraints_F = [x_F >= 0.0]
+        constraints_F = [x_F >= 0]
         for j in xrange(r):
             if j != k:
                 constraints_F += [x_F.T * F[j, :] <= err_F]
