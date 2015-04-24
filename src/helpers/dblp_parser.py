@@ -10,7 +10,7 @@ class CustomEntity:
 
 
 if __name__ == '__main__':
-    confs = ['KDD', 'SDM', 'CIKM', 'SIGMOD Conference', 'ICDM', 'VLDB']
+    confs = ['KDD', 'SDM', 'CIKM', 'SIGMOD Conference', 'ICDM', 'VLDB', 'PVLDB']
     out_dir = '/Users/pratik/Research/datasets/DBLP/coauthorship/'
     parser = XMLParser()
     parser.parser.UseForeignDTD(True)
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                                     if conf == 'SDM':
                                         fs.write('%s\t%s\n' % (author_names[i].encode('utf-8'),
                                                                author_names[j].encode('utf-8')))
-                                    if conf == 'VLDB':
+                                    if conf == 'VLDB' or conf == 'PVLDB':
                                         fv.write('%s\t%s\n' % (author_names[i].encode('utf-8'),
                                                                author_names[j].encode('utf-8')))
                                     if conf == 'CIKM':
@@ -75,7 +75,7 @@ if __name__ == '__main__':
 
     fs.close()
     fc.close()
-    fv.close()
     fi.close()
     fk.close()
     fm.close()
+    fv.close()
