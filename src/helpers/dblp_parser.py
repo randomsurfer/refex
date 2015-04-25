@@ -10,7 +10,10 @@ class CustomEntity:
 
 
 if __name__ == '__main__':
-    confs = ['KDD', 'SDM', 'CIKM', 'SIGMOD Conference', 'ICDM', 'VLDB', 'PVLDB']
+    entry_type_tags = ['inproceedings', 'article']
+    entry_type_tags = ['inproceedings', 'article']
+    confs = ['VLDB', 'PVLDB']
+    # confs = ['KDD', 'SDM', 'CIKM', 'SIGMOD Conference', 'ICDM', 'VLDB', 'PVLDB']
     out_dir = '/Users/pratik/Research/datasets/DBLP/coauthorship/'
     parser = XMLParser()
     parser.parser.UseForeignDTD(True)
@@ -25,11 +28,15 @@ if __name__ == '__main__':
 
     count = 0
     for (event, node) in iterparse('/Users/pratik/Research/datasets/DBLP/dblp.xml', events=['start'], parser=parser):
-        if node.tag == 'inproceedings':
-            book_title = node.find('booktitle')
+        node_tag = node.tag
+        if node_tag in entry_type_tags:
+            if node_tag == 'inproceedings':
+                subentry_type_to_find = node.find('booktitle')
+            else:
+                subentry_type_to_find = node.find('journal')
 
-            if book_title is not None and book_title.text in confs:
-                conf = book_title.text
+            if subentry_type_to_find is not None and subentry_type_to_find.text in confs:
+                conf = subentry_type_to_find.text
                 year = node.find('year')
 
                 if year is not None:
@@ -48,11 +55,11 @@ if __name__ == '__main__':
                         if no_authors > 1:
                             for i in xrange(no_authors - 1):
                                 for j in xrange(i + 1, no_authors):
-                                    if conf == 'SDM':
-                                        fs.write('%s\t%s\n' % (author_names[i].encode('utf-8'),
-                                                               author_names[j].encode('utf-8')))
                                     if conf == 'VLDB' or conf == 'PVLDB':
                                         fv.write('%s\t%s\n' % (author_names[i].encode('utf-8'),
+                                                               author_names[j].encode('utf-8')))
+                                    if conf == 'SDM':
+                                        fs.write('%s\t%s\n' % (author_names[i].encode('utf-8'),
                                                                author_names[j].encode('utf-8')))
                                     if conf == 'CIKM':
                                         fc.write('%s\t%s\n' % (author_names[i].encode('utf-8'),
