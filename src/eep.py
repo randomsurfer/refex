@@ -13,14 +13,21 @@ except IndexError:
     print "Usage :: python %s <epsilon> <graph_file> <output_file>" % sys.argv[0]
     sys.exit(1)
 
-num_nodes_enron = 8657
-for i in xrange(0, num_nodes_enron):
-    graph[i] = []
 
 def create_graph():
-    # supports directed graph
-    # fg = open(input_file, 'r')
-    #print "Starting allocation of memory for Graph"
+    node_set = set()
+    for line in open(input_file):
+        # source, destination, weight
+        line = line.strip()
+        line = line.split(',')
+        source = int(line[0])
+        dest = int(line[1])
+        node_set.add(source)
+        node_set.add(dest)
+    num_nodes = len(node_set)
+    for i in xrange(0, num_nodes):
+        graph[i] = []
+
     for line in open(input_file):
         # source, destination, weight
         line = line.strip()
@@ -36,9 +43,8 @@ def create_graph():
         if len(graph[node]) == 0:
             zero_nodes += 1
         degree += len(graph[node])
-    print 'num nodes: %s, zero deg nodes: %s, total degree: %s, avg degree: %.2f' % (num_nodes_enron, zero_nodes,
-                                                                                     degree,
-                                                                                     float(degree) / (num_nodes_enron-zero_nodes))
+    print 'num nodes: %s, zero deg nodes: %s, total degree: %s, avg degree: %.2f' \
+          % (num_nodes, zero_nodes, degree, float(degree) / (num_nodes-zero_nodes))
     return graph
 
 
@@ -50,16 +56,13 @@ def initialize(pie, active):
     return
 
 
-def degree_dist(activeCell):
-    # print graph
+def degree_dist(active_cell):
     fofU = [0 for i in xrange(len(graph))]
     for index in graph.keys():
-        fofU[index] = len(set(graph[index]) & set(activeCell))
-        # print fofU
+        fofU[index] = len(set(graph[index]) & set(active_cell))
     return fofU
 
 
-#outDir = 'partitions/ep' + str(epsilon) + '/'
 def display(pie):
     fo = open(output_file, "w")
     for key in pie.keys():
@@ -70,127 +73,120 @@ def display(pie):
     fo.close()
 
 
-graph = create_graph()
-#print "Graph Creation Complete"
-
-initialize(pie, active)
-#print "Active Partition Initialized"
-
-iteration = 0
-
-
 def split(cell, fofU, epsilon):
-    def align_splitted_cell(splitted_cell):
+    def align_split_cells(split_cells):
         idx = 1
-        aligned_splitted_cells = {}
-        for key in sorted(splitted_cell.keys()):
-            aligned_splitted_cells[idx] = []
-            for v in splittedCells[key]:
-                aligned_splitted_cells[idx].append(v)
+        aligned_split_cells = {}
+        for key in sorted(split_cells.keys()):
+            aligned_split_cells[idx] = []
+            for v in split_cells[key]:
+                aligned_split_cells[idx].append(v)
             idx += 1
-        return aligned_splitted_cells
+        return aligned_split_cells
 
-
-    splittedCells = {}
-    alignedSplittedCells = {}
+    split_cells = {}
+    aligned_split_cells = {}
 
     for vertex in cell:
         key = fofU[vertex]
-        if key not in splittedCells:
-            splittedCells[key] = [vertex]
+        if key not in split_cells:
+            split_cells[key] = [vertex]
         else:
-            splittedCells[key].append(vertex)
+            split_cells[key].append(vertex)
     # the partition till now in splittedCells is per Equitable Partition definition
 
-    sortedSplittedCellsKeys = sorted(splittedCells.keys())
-    if len(sortedSplittedCellsKeys) > 1:
-        splitBoundaries = {}
-        boundaryIndex = 1
-        startKey = sortedSplittedCellsKeys[0]
-        splitBoundaries[boundaryIndex] = [startKey]
-        for i in xrange(1, len(sortedSplittedCellsKeys)):
-            endKey = sortedSplittedCellsKeys[i]
-            if (endKey - startKey) <= epsilon:
-                splitBoundaries[boundaryIndex].append(endKey)
+    sorted_split_cell_keys = sorted(split_cells.keys())
+    if len(sorted_split_cell_keys) > 1:
+        split_boundaries = {}
+        boundary_index = 1
+        start_key = sorted_split_cell_keys[0]
+        split_boundaries[boundary_index] = [start_key]
+        for i in xrange(1, len(sorted_split_cell_keys)):
+            end_key = sorted_split_cell_keys[i]
+            if (end_key - start_key) <= epsilon:
+                split_boundaries[boundary_index].append(end_key)
             else:
-                boundaryIndex += 1
-                splitBoundaries[boundaryIndex] = [endKey]
-                startKey = endKey
-        for k in sorted(splitBoundaries.keys()):
-            alignedSplittedCells[k] = []
-            for b in splitBoundaries[k]:
-                for v in splittedCells[b]:
-                    alignedSplittedCells[k].append(v)
+                boundary_index += 1
+                split_boundaries[boundary_index] = [end_key]
+                start_key = end_key
+        for k in sorted(split_boundaries.keys()):
+            aligned_split_cells[k] = []
+            for b in split_boundaries[k]:
+                for v in split_cells[b]:
+                    aligned_split_cells[k].append(v)
     else:
-        alignedSplittedCells = align_splitted_cell(splittedCells)
-    return alignedSplittedCells
+        aligned_split_cells = align_split_cells(split_cells)
+    return aligned_split_cells
 
 
-def is_cell_in_active(sortedCell):
+def is_cell_in_active(sorted_cell):
     for key in active.keys():
-        cellInActive = sorted(active[key])
-        if cellInActive == sortedCell:
+        cell_in_active = sorted(active[key])
+        if cell_in_active == sorted_cell:
             return key
     return -1
 
 
-maxIndexInPie = 0
-maxIndexInActive = 0
-noOfVertices = len(graph)
-noIters = 0
+graph = create_graph()
 
-while active and (len(pie) != noOfVertices):
-    noIters += 1
-    activeKeys = sorted(active.keys())
-    minIdx = min(activeKeys)
-    activeCell = active[minIdx]
-    del (active[minIdx])
-    fofU = degree_dist(activeCell)
+initialize(pie, active)
+
+max_index_in_pie = 0
+max_index_in_active = 0
+num_nodes = len(graph)
+no_iters = 0
+
+while active and (len(pie) != num_nodes):
+    no_iters += 1
+    active_keys = sorted(active.keys())
+    min_index = min(active_keys)
+    active_cell = active[min_index]
+    del (active[min_index])
+    fofU = degree_dist(active_cell)
 
     for key in pie.keys():
         cell = pie[key]
-        splittedCells = split(cell, fofU, epsilon)
-        splittedCellsKeys = splittedCells.keys()
-        if len(splittedCellsKeys) == 1:
+        split_cells = split(cell, fofU, epsilon)
+        split_cells_keys = split_cells.keys()
+        if len(split_cells_keys) == 1:
             continue
-        s = max(splittedCellsKeys)  # s in paper
+        s = max(split_cells_keys)  # s in paper
         t = 1  # t in paper
-        tFinder = {}
-        for k in sorted(splittedCellsKeys):
-            l = len(splittedCells[k])
+        t_finder = {}
+        for k in sorted(split_cells_keys):
+            l = len(split_cells[k])
             if l > s:
                 break
             else:
-                if l not in tFinder:
-                    tFinder[l] = [k]
+                if l not in t_finder:
+                    t_finder[l] = [k]
                 else:
-                    tFinder[l].append(k)
-        tFinderKeys = sorted(tFinder.keys())
-        if len(tFinderKeys) > 0:
-            t = tFinder[max(tFinderKeys)][0]  # Let t be tbe smallest integer such |X_t| is max(1 <= t <= s)
+                    t_finder[l].append(k)
+        t_finder_keys = sorted(t_finder.keys())
+        if len(t_finder_keys) > 0:
+            t = t_finder[max(t_finder_keys)][0]  # Let t be tbe smallest integer such |X_t| is max(1 <= t <= s)
         else:
             t = 1
 
         del (pie[key])
-        for s in splittedCells.keys():
-            maxIndexInPie += 1
-            pie[maxIndexInPie] = splittedCells[s]
+        for s in split_cells.keys():
+            max_index_in_pie += 1
+            pie[max_index_in_pie] = split_cells[s]
 
-        doesCellBelongToActive = is_cell_in_active(sorted(cell))  # check if cell in a member of active
-        if doesCellBelongToActive != -1:
-            del (active[doesCellBelongToActive])
-            active[doesCellBelongToActive] = splittedCells[t]
+        does_cell_belong_to_active = is_cell_in_active(sorted(cell))  # check if cell in a member of active
+        if does_cell_belong_to_active != -1:
+            del (active[does_cell_belong_to_active])
+            active[does_cell_belong_to_active] = split_cells[t]
 
         for i in xrange(1, t):
-            maxIndexInActive += 1
-            active[maxIndexInActive] = splittedCells[i]
+            max_index_in_active += 1
+            active[max_index_in_active] = split_cells[i]
         for i in xrange(t + 1, s + 1):
-            maxIndexInActive += 1
-            active[maxIndexInActive] = splittedCells[i]
-        #print pie
-    if noIters % 100 == 0:
-        print 'No iters = %s, Size of active = %s, Size of pie = %s' % (noIters, len(active), len(pie))
+            max_index_in_active += 1
+            active[max_index_in_active] = split_cells[i]
+    if no_iters % 100 == 0:
+        print 'No iters = %s, Size of active = %s, Size of pie = %s' % (no_iters, len(active), len(pie))
+
 display(pie)
-#print 'No iters = ', noIters
 
 # TODO: 1. Sort Active according to size (lowest to highest) 2. Introduce FoFUDistributed and run time experiments
