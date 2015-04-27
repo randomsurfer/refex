@@ -2,6 +2,7 @@ import networkx as nx
 import os
 import numpy as np
 from numpy.lib.recfunctions import merge_arrays
+from collections import defaultdict
 
 
 class Features:
@@ -388,6 +389,30 @@ class Features:
                 feature_row.append(self.graph.node[node][fx_name])
             fx_matrix.append(tuple(feature_row))
         return np.array(fx_matrix)
+
+    def only_riders_as_dict(self, graph_file, rider_dir, bins=15):
+        # Compute rider features. Code is redundant, accommodates an independent riders flow in riders.py
+        # This will screw the graph features if used with anything else, pls refrain from doing that.
+        self.load_graph(graph_file)
+        self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins)
+        self.no_of_vertices = self.graph.number_of_nodes()
+        self.init_log_binned_fx_buckets()
+
+        fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+        self.compute_log_binned_features(fx_names)
+
+        graph_nodes = sorted(self.graph.nodes())
+        fx_names = []
+        for fx_name in sorted(self.graph.node[graph_nodes[0]].keys()):
+            fx_names.append(fx_name)
+
+        rider_features = defaultdict(list)
+        for node in graph_nodes:
+            feature_row = []
+            for fx_name in fx_names:
+                feature_row.append(self.graph.node[node][fx_name])
+            rider_features[node] = feature_row
+        return rider_features
 
     def dyn_rider(self, graph_file, num_nodes, base_rider_dir, curr_rider_dir, bins=15):
         self.load_graph_with_fixed_vertices(graph_file, num_nodes)

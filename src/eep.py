@@ -65,7 +65,7 @@ def degree_dist(active_cell):
 
 def display(pie):
     fo = open(output_file, "w")
-    for key in pie.keys():
+    for key in sorted(pie.keys()):
         cell = pie[key]
         for v in sorted(cell):
             fo.write(str(v) + " ")
