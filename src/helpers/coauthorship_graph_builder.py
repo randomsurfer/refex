@@ -5,6 +5,8 @@ if __name__ == '__main__':
     try:
         input_file = sys.argv[1]
         output_file = sys.argv[2]
+        prev_graph_file = sys.argv[3]
+        prev_mapping_file = sys.argv[4]
     except Exception:
         print 'usage:: python %s <input_file> <output_file>' % sys.argv[0]
         sys.exit(1)
@@ -12,7 +14,22 @@ if __name__ == '__main__':
     author_names_to_author_ids = {}
     coauthorship_counts = defaultdict(int)
 
-    author_id = 0
+    for line in open(prev_mapping_file):
+        line = line.strip().split('\t')
+        author_name = line[0]
+        author_id = int(line[1])
+        author_names_to_author_ids[author_name] = author_id
+
+    for i, line in enumerate(open(prev_graph_file)):
+        if i % 2 == 0:
+            line =line.strip().split(',')
+            s = int(line[0])
+            d = int(line[1])
+            w = int(line[2])
+            coauthorship_counts[(s, d)] = w
+
+    author_id = max(author_names_to_author_ids.values()) + 1
+
     for line in open(input_file):
         line = line.strip().split('\t')
         author_one = line[0]
