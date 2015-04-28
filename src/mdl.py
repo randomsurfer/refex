@@ -56,6 +56,6 @@ class MDL:
 
     def get_log_likelihood(self, actual_matrix, estimated_matrix):
         a = list(actual_matrix.flatten())
-        e = list(estimated_matrix.flatten())
-        print a
-        print e
+        E = np.abs(actual_matrix-estimated_matrix)
+        err = list(E.flatten())
+        return -0.5 * np.log2(np.exp(1)) / (np.var(a)) * sum([val**2 for val in err])
