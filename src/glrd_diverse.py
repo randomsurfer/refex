@@ -6,7 +6,6 @@ import cvxpy as cvx
 from numpy import linalg
 import argparse
 import mdl
-import sys
 
 '''
 V ~ GF is estimated using NMF for a factorization rank r.
@@ -33,54 +32,6 @@ where,
 G(.)(i) - denotes the i^th column vector of G.
 F(i)(.) - denotes the i^th row vector of F.
 '''
-
-# numpy 2d array slicing:
-# test = numpy.array([[1, 2], [3, 4], [5, 6]])
-# test[:,:] => full array
-# test[0,:] => 1st row
-# test[:,0] => 1st col
-# test[:,1] => 2nd col
-
-
-def glrd_sparse(V, G, F, r, err_V, err_F):
-    # sparsity threshold is num_nodes / num_roles
-    for k in xrange(r):
-        G_copy = np.copy(G)  # create local copies for excluding the k^th col and row of G and F resp.
-        F_copy = np.copy(F)
-        G_copy[:, k] = 0.0
-        F_copy[k, :] = 0.0
-
-        R = np.abs(V - np.dot(G_copy, F_copy))  # compute residual
-
-        # Solve for optimal G(.)(k) with sparsity constraints
-        F_k = F[k, :]
-        x_star_G = linalg.lstsq(R.T, F_k.T)[0].T
-        x_G = cvx.Variable(x_star_G.shape[0])
-        objective_G = cvx.Minimize(cvx.norm2(x_star_G - x_G))
-        constraints_G = [cvx.norm1(x_G) <= err_V, x_G >= 0]
-        prob_G = cvx.Problem(objective_G, constraints_G)
-        result = prob_G.solve(solver='SCS')
-        if not np.isinf(result):
-            G_k_min = np.asarray(x_G.value)
-            G[:, k] = G_k_min[:, 0]
-        else:
-            print result
-
-        # Solve for optimal F(k)(.) with sparsity constraints
-        G_k = G[:, k]
-        x_star_F = linalg.lstsq(R, G_k)[0]
-        x_F = cvx.Variable(x_star_F.shape[0])
-        objective_F = cvx.Minimize(cvx.norm2(x_star_F - x_F))
-        constraints_F = [cvx.sum_entries(x_F) <= err_F, x_F >= 0]
-        prob_F = cvx.Problem(objective_F, constraints_F)
-        result = prob_F.solve(solver='SCS')
-        if not np.isinf(result):
-            F_k_min = np.asarray(x_F.value)
-            F[k, :] = F_k_min[0, :]
-        else:
-            print result
-
-    return G, F
 
 
 def glrd_diverse(V, G, F, r, err_V, err_F):
@@ -136,14 +87,16 @@ def glrd_diverse(V, G, F, r, err_V, err_F):
 
 
 if __name__ == "__main__":
-    argument_parser = argparse.ArgumentParser(prog='compute glrd')
+    argument_parser = argparse.ArgumentParser(prog='compute glrd with diversity constraints')
     argument_parser.add_argument('-nf', '--node-feature', help='node-feature matrix file', required=True)
     argument_parser.add_argument('-o', '--output-prefix', help='glrd output prefix', required=True)
+    argument_parser.add_argument('-od', '--output-dir', help='glrd output dir', required=True)
 
     args = argument_parser.parse_args()
 
     node_feature = args.node_feature
     out_prefix = args.output_prefix
+    out_dir = args.output_dir
 
     with open(node_feature) as nf:
         n_cols = len(nf.readline().strip().split(','))
@@ -161,15 +114,15 @@ if __name__ == "__main__":
     mdlo = mdl.MDL(number_bins)
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
-    threshold_sparse = 0.5
+    diversity_threshold = 0.5  # fixing it to 0.5
+
     for rank in xrange(1, max_roles + 1):
-        # threshold_sparse = float(max_roles) / rank
         fctr = nimfa.mf(actual_fx_matrix, rank=rank, method="lsnmf", max_iter=100)
         fctr_res = nimfa.mf_run(fctr)
         G = np.asarray(fctr_res.basis())
         F = np.asarray(fctr_res.coef())
 
-        G, F = glrd_diverse(V=actual_fx_matrix, G=G, F=F, r=rank, err_V=threshold_sparse, err_F=threshold_sparse)
+        G, F = glrd_diverse(V=actual_fx_matrix, G=G, F=F, r=rank, err_V=diversity_threshold, err_F=diversity_threshold)
         code_length_G = mdlo.get_huffman_code_length(G)
         code_length_F = mdlo.get_huffman_code_length(F)
 
@@ -189,7 +142,7 @@ if __name__ == "__main__":
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 10:
+            if min_des_not_changed_counter == 15:
                 break
 
         print 'Number of Roles: %s, Model Cost: %.2f, -loglikelihood: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
@@ -197,5 +150,5 @@ if __name__ == "__main__":
 
     print 'MDL has not changed for these many iters:', min_des_not_changed_counter
     print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_G.shape[1])
-    np.savetxt('out-' + out_prefix + "-nodeRoles.txt", X=best_G, delimiter=',')
-    np.savetxt('out-' + out_prefix + "-rolesFeatures.txt", X=best_F, delimiter=',')
+    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-nodeRoles.txt", X=best_G, delimiter=' ')
+    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-rolesFeatures.txt", X=best_F, delimiter=' ')
