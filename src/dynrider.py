@@ -1,17 +1,8 @@
 import features
 import argparse
 import numpy as np
-import scipy.optimize as opt
 import mdl
 import nimfa
-
-def estimate_W(V, H):
-    W = np.zeros((V.shape[0], H.shape[0]))
-    print V.shape, H.shape
-    for j in xrange(0, W.shape[0]):
-        res = opt.nnls(H.T, V[j, :])
-        W[j, :] = res[0]
-    return W
 
 
 def load_role_fx_matrix(rf_matrix_file):

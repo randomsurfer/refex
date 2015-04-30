@@ -52,7 +52,7 @@ for node in sorted(nodes):
     node_measurements.append(weighted_degree[node])
     measurement_matrix.append(node_measurements)
 
-
+# betweenness = pickle.load( open( "betweenness.p", "rb" ) )
 pickle.dump(betweenness, open(out_dir + '/betweenness.p', 'wb'))
 pickle.dump(closeness, open(out_dir + '/closeness.p', 'wb'))
 pickle.dump(degree, open(out_dir + '/degree.p', 'wb'))
