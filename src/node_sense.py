@@ -3,6 +3,9 @@ __author__ = 'pratik'
 import sys
 import numpy as np
 import scipy.optimize as opt
+import matplotlib.pyplot as plt
+import brewer2mpl
+from sklearn.preprocessing import normalize
 
 
 '''
@@ -70,21 +73,61 @@ for node_id in node_id_seq:
     aligned_node_measurements.append(node_measurements[node_id, 1:])
 
 aligned_node_measurements = np.asarray(aligned_node_measurements)
+normalized_measurements = normalize(aligned_node_measurements, norm='l1', axis=0)
 
-E = estimate_basis(aligned_node_measurements, node_roles)
+E = estimate_basis(normalized_measurements, normalize(node_roles, norm='l1', axis=0))
 G_ones = np.ones((aligned_node_measurements.shape[0], 1))
-E_ones = estimate_basis(aligned_node_measurements, G_ones)
+E_ones = estimate_basis(normalized_measurements, G_ones)
 
-measurement_labels = ['Betweenness', 'Closeness', 'Degree', 'CC', 'BCC', 'WtDeg']
-print '\t'.join(measurement_labels)
+measurement_labels = ['Betweenness', 'Closeness', 'Degree', 'Clustering Coeff', '#BCC', 'Wt. Degree']
+# print '\t'.join(measurement_labels)
 E = np.asarray(E)
 E_ones = np.asarray(E_ones)
 
+all_values = []
 for r in xrange(E.shape[0]):
     m = []
     for s in xrange(E.shape[1]):
-        try:
-            m.append(str(E[r][s] / E_ones[0][s] * 100.0))
-        except IndexError:
-            print r,s
-    print '\t'.join(m)
+        m.append((E[r][s] / E_ones[0][s]))
+    all_values.append(m)
+
+all_values = np.asarray(all_values)
+colors = brewer2mpl.get_map('Set1', 'qualitative', 8).mpl_colors
+
+N = E.shape[0]
+width = 0.12
+gap = 0.1
+ind = np.arange(N)
+
+fig, ax = plt.subplots()
+
+between_values = all_values[:, 0]
+closeness_values = all_values[:, 1]
+degree_values = all_values[:, 2]
+clustering_values = all_values[:, 3]
+bcc_values = all_values[:, 4]
+wdegree_values = all_values[:, 5]
+
+rects1 = ax.bar(gap+ind, between_values, width, color=colors[0], label=measurement_labels[0])
+rects2 = ax.bar(gap+ind+width, closeness_values, width, color=colors[1], label=measurement_labels[1])
+rects3 = ax.bar(gap+ind+2*width, degree_values, width, color=colors[2], label=measurement_labels[2])
+rects4 = ax.bar(gap+ind+3*width, clustering_values, width, color=colors[3], label=measurement_labels[3])
+rects5 = ax.bar(gap+ind+4*width, bcc_values, width, color=colors[4], label=measurement_labels[4])
+rects6 = ax.bar(gap+ind+5*width, wdegree_values, width, color=colors[5], label=measurement_labels[5])
+
+# plt.xticks(ind, ['Role '+ str(i) for i in ind], rotation='vertical')
+ax.set_xticks(ind)
+ax.set_xticklabels(['Role '+ str(i) for i in ind], rotation=40, ha='left')
+ax.tick_params(axis='x', length=50, which='major', direction='out', top='off')
+ax.set_ylabel('Scores')
+plt.title('RolX on CIKM Co-Authorship Network, Year 2005-2009')
+
+plt.legend(loc=1,
+           ncol=3)
+
+# box = ax.get_position()
+# ax.set_position([box.x0, box.y0 + box.height * 0.1,
+#                  box.width, box.height * 0.9])
+
+# Put a legend below current axis
+plt.show()
