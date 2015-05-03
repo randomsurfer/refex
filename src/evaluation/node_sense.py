@@ -118,9 +118,9 @@ rects6 = ax.bar(gap+ind+5*width, wdegree_values, width, color=colors[5], label=m
 # plt.xticks(ind, ['Role '+ str(i) for i in ind], rotation='vertical')
 ax.set_xticks(ind)
 ax.set_xticklabels(['Role '+ str(i) for i in ind], rotation=40, ha='left')
-ax.tick_params(axis='x', length=50, which='major', direction='out', top='off')
-ax.set_ylabel('Scores')
-plt.title('RolX on CIKM Co-Authorship Network, Year 2005-2009')
+ax.tick_params(axis='x', length=50, which='major', direction='out', top='off', labelsize=18)
+ax.set_ylabel('Scores', size=16)
+plt.title('GLRD-Diverse on CIKM Co-Authorship Network, Year 2005-2009', size=16)
 
 plt.legend(loc=1,
            ncol=3)

@@ -120,6 +120,7 @@ for block_id in sorted(p2.keys()):
 
 cosine_similarities = []
 c = 0
+# d = 2**10  # number of bits per signature
 for a in node_pairs.keys():
     a_t = []
     a_tdt = []
@@ -163,23 +164,20 @@ for a in node_pairs.keys():
             for i in xrange(diff_tdt_size, diff_t_size):
                 diff_tdt = np.append(diff_tdt, 0.0)
 
+        # randv = np.random.randn(d, diff_t.shape[0])
+        # r1 = get_signature(diff_t, randv)
+        # r2 = get_signature(diff_tdt, randv)
+        # xor = r1 ^ r2
+        # hash_sim = d - nnz(xor) / float(d)
+        # cosine_similarities.append(hash_sim)
         tn = np.inner(diff_t, diff_tdt)
         td = la.norm(diff_t) * la.norm(diff_tdt)
         if td != 0.0:
             cosine_similarity = tn / td
             cosine_similarities.append(cosine_similarity)
-
+        c += 1
         if c % 1000 == 0:
             print 'Completed %s Pairs' % c
 
 cosine_similarities = np.asarray(cosine_similarities)
 np.save(output_file, cosine_similarities)
-
-
-# randv = np.random.randn(d, diff_t.shape[0])
-# r1 = get_signature(diff_t, randv)
-# r2 = get_signature(diff_tdt, randv)
-#
-# xor = r1 ^ r2
-# hash_sim = d - nnz(xor) / float(d)
-# cosine_similarities.append(hash_sim)

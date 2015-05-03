@@ -53,6 +53,7 @@ if __name__ == "__main__":
     mdlo = mdl.MDL(number_bins)
     code_length = mdlo.get_huffman_code_length(full_fx_matrix)
     model_cost = code_length * (n + f)
+    print model_cost
 
     primary_ari = []
     primary_ari_uniform = []

@@ -12,8 +12,8 @@ class CustomEntity:
 if __name__ == '__main__':
     entry_type_tags = ['inproceedings', 'article']
     entry_type_tags = ['inproceedings', 'article']
-    confs = ['VLDB', 'PVLDB']
-    # confs = ['KDD', 'SDM', 'CIKM', 'SIGMOD Conference', 'ICDM', 'VLDB', 'PVLDB']
+    # confs = ['VLDB', 'PVLDB']
+    confs = ['KDD', 'SDM', 'CIKM', 'SIGMOD Conference', 'ICDM', 'VLDB', 'PVLDB']
     out_dir = '/Users/pratik/Research/datasets/DBLP/coauthorship/'
     parser = XMLParser()
     parser.parser.UseForeignDTD(True)
