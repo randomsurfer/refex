@@ -3,7 +3,6 @@ import mdl
 import argparse
 import numpy as np
 import nimfa
-# import pymf
 
 
 if __name__ == "__main__":
@@ -41,7 +40,7 @@ if __name__ == "__main__":
         fctr_res = nimfa.mf_run(fctr)
         W = np.asarray(fctr_res.basis())
         H = np.asarray(fctr_res.coef())
-        # estimated_matrix = np.asarray(np.dot(W, H))
+        estimated_matrix = np.asarray(np.dot(W, H))
 
         code_length_W = mdlo.get_huffman_code_length(W)
         code_length_H = mdlo.get_huffman_code_length(H)
@@ -50,9 +49,9 @@ if __name__ == "__main__":
         # model_cost = code_length_W + code_length_H  # For total bit length
         # For avg. symbol bit length:
         model_cost = code_length_W * (W.shape[0] + W.shape[1]) + code_length_H * (H.shape[0] + H.shape[1])
-        reconstruction_error = fctr_res.distance(metric='kl')
+        loglikelihood = mdlo.get_log_likelihood(actual_fx_matrix, estimated_matrix)
 
-        description_length = model_cost + reconstruction_error
+        description_length = model_cost - loglikelihood
 
         if description_length < minimum_description_length:
             minimum_description_length = description_length
@@ -61,11 +60,11 @@ if __name__ == "__main__":
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 5:
+            if min_des_not_changed_counter == 15:
                 break
 
-        print 'Number of Roles: %s, Model Cost: %.2f, Reconstruct Err: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
-              % (rank, model_cost, reconstruction_error, description_length, minimum_description_length, best_W.shape[1])
+        print 'Number of Roles: %s, Model Cost: %.2f, -loglikelihood: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
+              % (rank, model_cost, loglikelihood, description_length, minimum_description_length, best_W.shape[1])
 
     print 'MDL has not changed for these many iters:', min_des_not_changed_counter
     print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_W.shape[1])

@@ -232,7 +232,54 @@ class Features:
                 fx_name = file_name + '_' + str(valid_indices[-1])
         return fx_name
 
-    def compute_rider_binned_block_features(self, rider_dir, attrs=['wgt'], bins=15):
+    def compute_pure_rider_block_features(self, rider_dir, attrs=['wgt']):
+        for file_name in sorted(os.listdir(rider_dir)):
+            if file_name == ".DS_Store":
+                continue
+            blocks_with_sizes = []
+
+            for line in open(os.path.join(rider_dir, file_name)):
+                line = line.strip().split()
+                blocks_with_sizes.append((len(line), line))
+
+            sorted_blocks = sorted(blocks_with_sizes, key=lambda x: x[0])
+
+            for i, (l, block) in enumerate(sorted_blocks):
+                block = set([int(n) for n in block])
+                fx_name_base = file_name + '_' + str(i)
+                for vertex in self.graph.nodes():
+                    in_neighbours = self.graph.predecessors(vertex)
+                    out_neighbours = self.graph.successors(vertex)
+
+                    in_connections_to_block = set(in_neighbours) & block
+                    in_connections_to_block_size = len(in_connections_to_block)
+                    out_connections_to_block = set(out_neighbours) & block
+                    out_connections_to_block_size = len(out_connections_to_block)
+
+                    ## Local Rider Features
+                    self.graph.node[vertex]['wd_'+fx_name_base] = float(in_connections_to_block_size)  # destination
+                    self.graph.node[vertex]['ws_'+fx_name_base] = float(out_connections_to_block_size)  # source
+
+                    for attr in attrs:
+                        self.graph.node[vertex]['wda-'+attr+'_'+fx_name_base] = 0.0
+                        self.graph.node[vertex]['wsa-'+attr+'_'+fx_name_base] = 0.0
+
+                    if in_connections_to_block_size > 0:
+                        for attr in attrs:
+                            for connection in in_connections_to_block:
+                                if attr == 'wgt':
+                                    self.graph.node[vertex]['wda-'+attr+'_'+fx_name_base] \
+                                        += self.graph[connection][vertex]['weight']
+
+                    if out_connections_to_block_size > 0:
+                        for attr in attrs:
+                            for connection in out_connections_to_block:
+                                if attr == 'wgt':
+                                    self.graph.node[vertex]['wsa-'+attr+'_'+fx_name_base] \
+                                        += self.graph[vertex][connection]['weight']
+            print 'RIDeR File: %s' % file_name
+
+    def compute_rider_binned_block_features(self, rider_dir, attrs=['wgt'], bins=15, uniform=False):
         # Alternate log binned rider block features, binning to decrease the complexity
         fx_count = 0
         for file_name in sorted(os.listdir(rider_dir)):
@@ -246,7 +293,10 @@ class Features:
                 line = line.strip().split()
                 block_sizes.append(len(line))
 
-            log_bins = np.logspace(np.log10(min(block_sizes)+1), np.log10(max(block_sizes)+1), bins)
+            if not uniform:
+                log_bins = np.logspace(np.log10(min(block_sizes)+1), np.log10(max(block_sizes)+1), bins)
+            else:
+                log_bins = np.linspace((min(block_sizes)+1), (max(block_sizes)+1), bins)
 
             for i, line in enumerate(open(os.path.join(rider_dir, file_name))):
                 line = line.strip().split()
@@ -366,11 +416,18 @@ class Features:
             fx_bins_dict[file_name] = log_bins
         return fx_names_dict, fx_bins_dict
 
-    def only_riders(self, graph_file, rider_dir, bins=15):
+    def only_riders(self, graph_file, rider_dir, bins=15, prune=True, uniform=False):
         # Compute rider features. Code is redundant, accommodates an independent riders flow in riders.py
         # This will screw the graph features if used with anything else, pls refrain from doing that.
         self.load_graph(graph_file)
-        self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins)
+        if prune:
+            if uniform:
+                self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins, uniform=True)
+            else:
+                self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins, uniform=False)
+        else:
+            self.compute_pure_rider_block_features(rider_dir, attrs=['wgt'])
+
         self.no_of_vertices = self.graph.number_of_nodes()
         self.init_log_binned_fx_buckets()
 

@@ -1,7 +1,6 @@
 __author__ = 'pratik'
 
 import sys
-import math
 import numpy as np
 import numpy.linalg as la
 import networkx as nx
@@ -24,7 +23,7 @@ except IndexError:
 def get_signature(user_vector, rand_proj):
     res = 0
     for p in rand_proj:
-        res = res << 1
+        res <<= 1
         val = np.dot(p, user_vector)
         if val >= 0:
             res |= 1
@@ -37,10 +36,10 @@ def nnz(num):
     if num == 0:
         return 0
     res = 1
-    num = num & (num-1)
+    num &= (num-1)
     while num:
         res += 1
-        num = num & (num-1)
+        num &= (num-1)
     return res
 
 def load_graph(file_name):
@@ -70,82 +69,117 @@ def load_partition(graph, file_name, epsilon=-1):
     return partition
 
 
+def get_block_id_for_node(partition):
+    node_to_block_id = {}
+    for block_id in partition.keys():
+        nodes = partition[block_id]
+        for node in nodes:
+            node_to_block_id[node] = block_id
+    return node_to_block_id
+
 g1 = load_graph(graph_t1)
 g2 = load_graph(graph_t2)
 p1 = load_partition(g1, partition_t1, epsilon=epsilon)
 p2 = load_partition(g2, partition_t2, epsilon=epsilon)
 print 'Graphs and Partitions Loaded!'
 
-node_pairs = []
+node_pairs = defaultdict(list)
+total_pairs = 0
 for key in p1.keys():
     block = p1[key]
     block_size = len(block)
     if block_size > 1:
         for i in xrange(0, block_size - 1):
             for j in xrange(i + 1, block_size):
-                node_pairs.append((block[i], block[j]))
+                node_pairs[block[i]].append(block[j])
+                total_pairs += 1
 
-print 'Total Pairs: ', len(node_pairs)
-p1_keys = [(k, len(p1[k])) for k in p1.keys()]
-sorted_p1_keys = [k for k, v in sorted(p1_keys, key=lambda x: x[1])]
-p2_keys = [(k, len(p2[k])) for k in p2.keys()]
-sorted_p2_keys = [k for k, v in sorted(p2_keys, key=lambda x: x[1])]
+print 'Total Pairs: ', total_pairs
 
-a_t = []
-b_t = []
-a_tdt = []
-b_tdt = []
+node_to_block_id_for_p1 = get_block_id_for_node(p1)
+node_to_block_id_for_p2 = get_block_id_for_node(p2)
+
+comparison_block_order_for_p1 = []
+comparison_block_order_for_p2 = []
+
+for node in sorted(node_to_block_id_for_p1.keys()):
+    block_id_for_node_in_p1 = node_to_block_id_for_p1[node]
+    block_id_for_node_in_p2 = node_to_block_id_for_p2[node]
+
+    if (not block_id_for_node_in_p1 in comparison_block_order_for_p1) and (not block_id_for_node_in_p2 in comparison_block_order_for_p2):
+        comparison_block_order_for_p1.append(block_id_for_node_in_p1)
+        comparison_block_order_for_p2.append(block_id_for_node_in_p2)
+
+for block_id in sorted(p1.keys()):
+    if block_id not in comparison_block_order_for_p1:
+        comparison_block_order_for_p1.append(block_id)
+
+for block_id in sorted(p2.keys()):
+    if block_id not in comparison_block_order_for_p2:
+        comparison_block_order_for_p2.append(block_id)
+
 cosine_similarities = []
-d = 2**6  # number of bits per signature
-
 c = 0
-for a, b in node_pairs:
-    c += 1
+for a in node_pairs.keys():
+    a_t = []
+    a_tdt = []
+
     adj_a_t = set(g1.neighbors(a))
-    adj_b_t = set(g1.neighbors(b))
+    adj_a_tdt = set(g2.neighbors(a))
 
-    for key in sorted_p1_keys:
-        block = set(p1[key])
+    for block_id in comparison_block_order_for_p1:
+        block = set(p1[block_id])
         a_t.append(float(len(adj_a_t & block)))
-        b_t.append(float(len(adj_b_t & block)))
 
-    adj_a_tdt = set(g1.neighbors(a))
-    adj_b_tdt = set(g1.neighbors(b))
-
-    for key in sorted_p2_keys:
-        block = set(p2[key])
+    for block_id in comparison_block_order_for_p2:
+        block = set(p2[block_id])
         a_tdt.append(float(len(adj_a_tdt & block)))
-        b_tdt.append(float(len(adj_b_tdt & block)))
 
-    diff_t = np.asarray(a_t) - np.asarray(b_t)
-    diff_tdt = np.asarray(a_tdt) - np.asarray(b_tdt)
+    for b in node_pairs[a]:
+        b_t = []
+        b_tdt = []
 
-    diff_t_size = diff_t.shape[0]
-    diff_tdt_size = diff_tdt.shape[0]
+        adj_b_t = set(g1.neighbors(b))
+        adj_b_tdt = set(g2.neighbors(b))
 
-    if diff_tdt_size >= diff_t_size:
-        for i in xrange(diff_t_size, diff_tdt_size):
-            diff_t = np.append(diff_t, 0.0)
-    else:
-        for i in xrange(diff_tdt_size, diff_t_size):
-            diff_tdt = np.append(diff_tdt, 0.0)
+        for block_id in comparison_block_order_for_p1:
+            block = set(p1[block_id])
+            b_t.append(float(len(adj_b_t & block)))
 
-    # randv = np.random.randn(d, diff_t.shape[0])
-    # r1 = get_signature(diff_t, randv)
-    # r2 = get_signature(diff_tdt, randv)
-    #
-    # xor = r1 ^ r2
-    # hash_sim = d - nnz(xor) / float(d)
-    # cosine_similarities.append(hash_sim)
+        for block_id in comparison_block_order_for_p2:
+            block = set(p2[block_id])
+            b_tdt.append(float(len(adj_b_tdt & block)))
 
-    tn = np.inner(diff_t, diff_tdt)
-    td = la.norm(diff_t) * la.norm(diff_tdt)
-    if td != 0.0:
-        cosine_similarity = tn / td
-        cosine_similarities.append(cosine_similarity)
+        diff_t = np.asarray(a_t) - np.asarray(b_t)
+        diff_tdt = np.asarray(a_tdt) - np.asarray(b_tdt)
 
-    if c % 1000 == 0:
-        print 'Completed %s Pairs' % c
+        diff_t_size = diff_t.shape[0]
+        diff_tdt_size = diff_tdt.shape[0]
+
+        if diff_tdt_size >= diff_t_size:
+            for i in xrange(diff_t_size, diff_tdt_size):
+                diff_t = np.append(diff_t, 0.0)
+        else:
+            for i in xrange(diff_tdt_size, diff_t_size):
+                diff_tdt = np.append(diff_tdt, 0.0)
+
+        tn = np.inner(diff_t, diff_tdt)
+        td = la.norm(diff_t) * la.norm(diff_tdt)
+        if td != 0.0:
+            cosine_similarity = tn / td
+            cosine_similarities.append(cosine_similarity)
+
+        if c % 1000 == 0:
+            print 'Completed %s Pairs' % c
 
 cosine_similarities = np.asarray(cosine_similarities)
 np.save(output_file, cosine_similarities)
+
+
+# randv = np.random.randn(d, diff_t.shape[0])
+# r1 = get_signature(diff_t, randv)
+# r2 = get_signature(diff_tdt, randv)
+#
+# xor = r1 ^ r2
+# hash_sim = d - nnz(xor) / float(d)
+# cosine_similarities.append(hash_sim)
