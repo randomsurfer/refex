@@ -117,10 +117,10 @@ if __name__ == "__main__":
     diversity_threshold = 0.5  # fixing it to 0.5
 
     for rank in xrange(1, max_roles + 1):
-        fctr = nimfa.mf(actual_fx_matrix, rank=rank, method="lsnmf", max_iter=100)
-        fctr_res = nimfa.mf_run(fctr)
-        G = np.asarray(fctr_res.basis())
-        F = np.asarray(fctr_res.coef())
+        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
+        lsnmf_fit = lsnmf()
+        G = np.asarray(lsnmf_fit.basis())
+        F = np.asarray(lsnmf_fit.coef())
 
         G, F = glrd_diverse(V=actual_fx_matrix, G=G, F=F, r=rank, err_V=diversity_threshold, err_F=diversity_threshold)
         code_length_G = mdlo.get_huffman_code_length(G)

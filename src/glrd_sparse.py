@@ -56,7 +56,8 @@ def glrd_sparse(V, G, F, r, err_V, err_F):
         x_star_G = linalg.lstsq(R.T, F_k.T)[0].T
         x_G = cvx.Variable(x_star_G.shape[0])
         objective_G = cvx.Minimize(cvx.norm2(x_star_G - x_G))
-        constraints_G = [cvx.norm1(x_G) <= err_V, x_G >= 0]
+        constraints_G = [x_G >= 0]
+        constraints_G += [cvx.norm1(x_G) <= err_V]
         prob_G = cvx.Problem(objective_G, constraints_G)
         result = prob_G.solve(solver='SCS')
         if not np.isinf(result):
@@ -70,7 +71,8 @@ def glrd_sparse(V, G, F, r, err_V, err_F):
         x_star_F = linalg.lstsq(R, G_k)[0]
         x_F = cvx.Variable(x_star_F.shape[0])
         objective_F = cvx.Minimize(cvx.norm2(x_star_F - x_F))
-        constraints_F = [cvx.sum_entries(x_F) <= err_F, x_F >= 0]
+        constraints_F = [x_F >= 0]
+        constraints_F += [cvx.sum_entries(x_F) <= err_F]
         prob_F = cvx.Problem(objective_F, constraints_F)
         result = prob_F.solve(solver='SCS')
         if not np.isinf(result):
@@ -111,11 +113,11 @@ if __name__ == "__main__":
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
     for rank in xrange(1, max_roles + 1):
-        sparsity_threshold = round(float(m) / float(rank), 2)  # fixing it to |Vertex Set| / (number of roles)
-        fctr = nimfa.mf(actual_fx_matrix, rank=rank, method="lsnmf", max_iter=100)
-        fctr_res = nimfa.mf_run(fctr)
-        G = np.asarray(fctr_res.basis())
-        F = np.asarray(fctr_res.coef())
+        sparsity_threshold = round(float(max_roles) / float(rank), 2)  # fixing it to |Vertex Set| / (number of roles)
+        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
+        lsnmf_fit = lsnmf()
+        G = np.asarray(lsnmf_fit.basis())
+        F = np.asarray(lsnmf_fit.coef())
 
         G, F = glrd_sparse(V=actual_fx_matrix, G=G, F=F, r=rank, err_V=sparsity_threshold, err_F=sparsity_threshold)
         code_length_G = mdlo.get_huffman_code_length(G)
@@ -145,5 +147,5 @@ if __name__ == "__main__":
 
     print 'MDL has not changed for these many iters:', min_des_not_changed_counter
     print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_G.shape[1])
-    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-nodeRoles.txt", X=best_G, delimiter=' ')
-    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-rolesFeatures.txt", X=best_F, delimiter=' ')
+    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-nodeRoles.txt", X=best_G)
+    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-rolesFeatures.txt", X=best_F)

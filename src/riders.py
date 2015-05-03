@@ -36,10 +36,10 @@ if __name__ == "__main__":
     min_des_not_changed_counter = 0
 
     for rank in xrange(1, max_roles + 1):
-        fctr = nimfa.mf(actual_fx_matrix, rank=rank, method="lsnmf", max_iter=100)
-        fctr_res = nimfa.mf_run(fctr)
-        W = np.asarray(fctr_res.basis())
-        H = np.asarray(fctr_res.coef())
+        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
+        lsnmf_fit = lsnmf()
+        W = np.asarray(lsnmf_fit.basis())
+        H = np.asarray(lsnmf_fit.coef())
         estimated_matrix = np.asarray(np.dot(W, H))
 
         code_length_W = mdlo.get_huffman_code_length(W)
