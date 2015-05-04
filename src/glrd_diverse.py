@@ -102,22 +102,22 @@ if __name__ == "__main__":
         n_cols = len(nf.readline().strip().split(','))
 
     actual_fx_matrix = np.loadtxt(node_feature, delimiter=',', usecols=range(1, n_cols))
-    m, n = actual_fx_matrix.shape
-    print 'Number of Features: ', n
-    print 'Number of Nodes: ', m
+    n, f = actual_fx_matrix.shape
+    print 'Number of Features: ', f
+    print 'Number of Nodes: ', n
 
-    number_bins = int(np.log2(m))
-    max_roles = min([m, n])
+    number_bins = int(np.log2(n))
+    max_roles = min([n, f])
     best_G = None
     best_F = None
 
     mdlo = mdl.MDL(number_bins)
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
-    diversity_threshold = 0.01 # fixing it to 0.01
+    diversity_threshold = 0.15 # fixing it to 0.01
 
     for rank in xrange(1, max_roles + 1):
-        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
+        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=200)
         lsnmf_fit = lsnmf()
         G = np.asarray(lsnmf_fit.basis())
         F = np.asarray(lsnmf_fit.coef())
@@ -142,11 +142,13 @@ if __name__ == "__main__":
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 15:
+            if min_des_not_changed_counter == 20:
                 break
-
-        print 'Number of Roles: %s, Model Cost: %.2f, -loglikelihood: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
+        try:
+            print 'Number of Roles: %s, Model Cost: %.2f, -loglikelihood: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
               % (rank, model_cost, loglikelihood, description_length, minimum_description_length, best_G.shape[1])
+        except Exception:
+            continue
 
     print 'MDL has not changed for these many iters:', min_des_not_changed_counter
     print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_G.shape[1])

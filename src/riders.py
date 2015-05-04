@@ -24,10 +24,11 @@ if __name__ == "__main__":
     fx = features.Features()
 
     binned_fx_matrix = fx.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True)
+    print 'Prev Shape: ', binned_fx_matrix.shape[1]
     actual_fx_matrix = fx.prune_matrix(binned_fx_matrix, 0.0)
 
     n, f = actual_fx_matrix.shape
-    print 'Number of Features: ', n
+    print 'Number of Features: ', f
 
     fx_matrix_with_node_ids = np.zeros((n, f+1))
     fx_matrix_with_node_ids[:, 0] = np.array([float(node) for node in xrange(n)])
