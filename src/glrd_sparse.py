@@ -49,7 +49,7 @@ def glrd_sparse(V, G, F, r, err_V, err_F):
         G_copy[:, k] = 0.0
         F_copy[k, :] = 0.0
 
-        R = np.abs(V - np.dot(G_copy, F_copy))  # compute residual
+        R = V - np.dot(G_copy, F_copy)  # compute residual
 
         # Solve for optimal G(.)(k) with sparsity constraints
         F_k = F[k, :]
@@ -112,8 +112,8 @@ if __name__ == "__main__":
     mdlo = mdl.MDL(number_bins)
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
+    sparsity_threshold = 1.0
     for rank in xrange(1, max_roles + 1):
-        sparsity_threshold = round(float(max_roles) / float(rank), 2)  # fixing it to |Vertex Set| / (number of roles)
         lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
         lsnmf_fit = lsnmf()
         G = np.asarray(lsnmf_fit.basis())
@@ -148,4 +148,4 @@ if __name__ == "__main__":
     print 'MDL has not changed for these many iters:', min_des_not_changed_counter
     print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_G.shape[1])
     np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-nodeRoles.txt", X=best_G)
-    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-rolesFeatures.txt", X=best_F)
+    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-roleFeatures.txt", X=best_F)

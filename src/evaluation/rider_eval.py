@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     fx = features.Features()
 
-    full_fx_matrix = fx.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, prune=False)
+    full_fx_matrix = fx.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=False)
     number_nodes = fx.graph.number_of_nodes()
     number_bins = int(np.log2(number_nodes))
 
@@ -66,8 +66,8 @@ if __name__ == "__main__":
         fx_b = features.Features()
         fx_bu = features.Features()
 
-        binned_fx_matrix = fx_b.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, prune=True, uniform=False)
-        binned_fx_matrix_u = fx_bu.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, prune=True, uniform=True)
+        binned_fx_matrix = fx_b.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True, uniform=False)
+        binned_fx_matrix_u = fx_bu.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True, uniform=True)
 
         n_b, f_b = binned_fx_matrix.shape
         n_bu, f_bu = binned_fx_matrix_u.shape

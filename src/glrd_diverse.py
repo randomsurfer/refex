@@ -114,7 +114,7 @@ if __name__ == "__main__":
     mdlo = mdl.MDL(number_bins)
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
-    diversity_threshold = 0.5  # fixing it to 0.5
+    diversity_threshold = 0.01 # fixing it to 0.01
 
     for rank in xrange(1, max_roles + 1):
         lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
@@ -150,5 +150,5 @@ if __name__ == "__main__":
 
     print 'MDL has not changed for these many iters:', min_des_not_changed_counter
     print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_G.shape[1])
-    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-nodeRoles.txt", X=best_G, delimiter=' ')
-    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-rolesFeatures.txt", X=best_F, delimiter=' ')
+    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-nodeRoles.txt", X=best_G)
+    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-roleFeatures.txt", X=best_F)

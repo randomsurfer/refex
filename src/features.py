@@ -416,11 +416,11 @@ class Features:
             fx_bins_dict[file_name] = log_bins
         return fx_names_dict, fx_bins_dict
 
-    def only_riders(self, graph_file, rider_dir, bins=15, prune=True, uniform=False):
+    def only_riders(self, graph_file, rider_dir, bins=15, bin_features=True, uniform=False):
         # Compute rider features. Code is redundant, accommodates an independent riders flow in riders.py
         # This will screw the graph features if used with anything else, pls refrain from doing that.
         self.load_graph(graph_file)
-        if prune:
+        if bin_features:
             if uniform:
                 self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins, uniform=True)
             else:
@@ -447,11 +447,14 @@ class Features:
             fx_matrix.append(tuple(feature_row))
         return np.array(fx_matrix)
 
-    def only_riders_as_dict(self, graph_file, rider_dir, bins=15):
+    def only_riders_as_dict(self, graph_file, rider_dir, bins=15, all_features=False):
         # Compute rider features. Code is redundant, accommodates an independent riders flow in riders.py
         # This will screw the graph features if used with anything else, pls refrain from doing that.
         self.load_graph(graph_file)
-        self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins)
+        if all_features:
+            self.compute_pure_rider_block_features(rider_dir, attrs=['wgt'])
+        else:
+            self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins)
         self.no_of_vertices = self.graph.number_of_nodes()
         self.init_log_binned_fx_buckets()
 
