@@ -859,6 +859,22 @@ class Features:
         diff = float(max_diff) - abs(col_1 - col_2) + self.TOLERANCE
         return (diff >= self.TOLERANCE).all()
 
+    def prune_matrix(self, actual_matrix, max_diff):
+        fx_graph = nx.Graph()
+        n = actual_matrix.shape[1]
+        for i in xrange(0, n-1):
+            for j in xrange(i+1, n):
+                if self.fx_column_comparator(actual_matrix[:, i], actual_matrix[:, j], max_diff):
+                    fx_graph.add_edge(i, j)
+
+        cols_to_remove = []
+        connected_fx = nx.connected_components(fx_graph)
+        for cc in connected_fx:
+            for col in sorted(cc[1:]):
+                cols_to_remove.append(col)
+
+        return np.delete(actual_matrix, cols_to_remove, axis=1)
+
     def compare_and_prune_vertex_fx_vectors(self, prev_feature_vector, new_feature_vector, max_dist):
         # input: prev iteration node-feature matrix and current iteration node-feature matrix (as structured
         # numpy array) and max_dist. Creates a feature graph based on the max_dist criteria, refer the inline comments

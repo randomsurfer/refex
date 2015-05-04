@@ -10,24 +10,33 @@ if __name__ == "__main__":
     argument_parser.add_argument('-g', '--graph', help='input graph file', required=True)
     argument_parser.add_argument('-b', '--bins', help='bins for rider features', required=True)
     argument_parser.add_argument('-rd', '--rider-dir', help='rider directory', required=True)
-    argument_parser.add_argument('-o', '--output-prefix', help='output prefix for factors', required=True)
+    argument_parser.add_argument('-od', '--output-dir', help='final output dir', required=True)
+    argument_parser.add_argument('-p', '--output-prefix', help='prefix', required=True)
 
     args = argument_parser.parse_args()
 
     graph_file = args.graph
     rider_dir = args.rider_dir
     bins = int(args.bins)
-    out_prefix = args.output_prefix
+    out_dir = args.output_dir
+    prefix = args.output_prefix
 
     fx = features.Features()
 
-    actual_fx_matrix = fx.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True)
-    m, n = actual_fx_matrix.shape
+    binned_fx_matrix = fx.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True)
+    actual_fx_matrix = fx.prune_matrix(binned_fx_matrix, 0.0)
+
+    n, f = actual_fx_matrix.shape
     print 'Number of Features: ', n
 
-    number_nodes = fx.graph.number_of_nodes()
-    number_bins = int(np.log2(number_nodes))
-    max_roles = min([number_nodes, n])
+    fx_matrix_with_node_ids = np.zeros((n, f+1))
+    fx_matrix_with_node_ids[:, 0] = np.array([float(node) for node in xrange(n)])
+    fx_matrix_with_node_ids[:, 1:] = actual_fx_matrix
+    np.savetxt(out_dir + '/out-' + prefix + '-featureValues.csv', X=fx_matrix_with_node_ids, delimiter=',')
+    np.savetxt(out_dir + '/out-' + prefix + '-ids.txt', X=fx_matrix_with_node_ids[:, 0])
+
+    number_bins = int(np.log2(n))
+    max_roles = min([n, f])
     best_W = None
     best_H = None
 
@@ -36,7 +45,7 @@ if __name__ == "__main__":
     min_des_not_changed_counter = 0
 
     for rank in xrange(1, max_roles + 1):
-        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
+        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=1000)
         lsnmf_fit = lsnmf()
         W = np.asarray(lsnmf_fit.basis())
         H = np.asarray(lsnmf_fit.coef())
@@ -60,7 +69,7 @@ if __name__ == "__main__":
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 15:
+            if min_des_not_changed_counter == 10:
                 break
 
         print 'Number of Roles: %s, Model Cost: %.2f, -loglikelihood: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
@@ -68,5 +77,5 @@ if __name__ == "__main__":
 
     print 'MDL has not changed for these many iters:', min_des_not_changed_counter
     print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_W.shape[1])
-    np.savetxt(out_prefix+"-nodeRoles.txt", X=best_W)
-    np.savetxt(out_prefix+"-roleFeatures.txt", X=best_H)
+    np.savetxt(out_dir + '/out-' + prefix + "-nodeRoles.txt", X=best_W)
+    np.savetxt(out_dir + '/out-' + prefix + "-roleFeatures.txt", X=best_H)
