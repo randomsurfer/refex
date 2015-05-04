@@ -44,7 +44,8 @@ if __name__ == "__main__":
 
     fx = features.Features()
 
-    full_fx_matrix = fx.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=False)
+    full_fx_matrix = fx.prune_matrix(fx.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins,
+                                                    bin_features=False), max_diff=0.0)
     number_nodes = fx.graph.number_of_nodes()
     number_bins = int(np.log2(number_nodes))
 
@@ -53,7 +54,12 @@ if __name__ == "__main__":
     mdlo = mdl.MDL(number_bins)
     code_length = mdlo.get_huffman_code_length(full_fx_matrix)
     model_cost = code_length * (n + f)
-    print model_cost
+
+    print '*'*50
+    print 'Base Model Cost: ', model_cost
+    print '*'*50
+    print 'Num Nodes: ', n
+    print 'Num FX: ', f
 
     primary_ari = []
     primary_ari_uniform = []
@@ -62,15 +68,22 @@ if __name__ == "__main__":
     model_costs = []
     model_costs_uniform = []
 
-    for bins in xrange(1, 40):
+    for bins in xrange(1, 41):
         fx_b = features.Features()
         fx_bu = features.Features()
 
-        binned_fx_matrix = fx_b.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True, uniform=False)
-        binned_fx_matrix_u = fx_bu.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True, uniform=True)
+        binned_fx_matrix = fx_b.prune_matrix(fx_b.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins,
+                                                              bin_features=True, uniform=False),
+                                             max_diff=0.0)
+        binned_fx_matrix_u = fx_bu.prune_matrix(fx_bu.only_riders(graph_file=graph_file, rider_dir=rider_dir,
+                                                                  bins=bins, bin_features=True, uniform=True),
+                                                max_diff=0.0)
 
         n_b, f_b = binned_fx_matrix.shape
         n_bu, f_bu = binned_fx_matrix_u.shape
+
+        print 'Non Uniform FX: ', f_b
+        print 'Uniform FX: ', f_bu
 
         mdlo_b = mdl.MDL(number_bins)
         mdlo_bu = mdl.MDL(number_bins)
@@ -93,15 +106,15 @@ if __name__ == "__main__":
         for rank in xrange(33, 43):
             for i in xrange(10):
                 c += 1
-                fctr = nimfa.mf(full_fx_matrix, rank=rank, method="lsnmf", max_iter=100)
-                fctr_b = nimfa.mf(binned_fx_matrix, rank=rank, method="lsnmf", max_iter=100)
-                fctr_bu = nimfa.mf(binned_fx_matrix_u, rank=rank, method="lsnmf", max_iter=100)
+                fctr = nimfa.Lsnmf(full_fx_matrix, rank=rank, max_iter=200)
+                fctr_b = nimfa.Lsnmf(binned_fx_matrix, rank=rank, max_iter=200)
+                fctr_bu = nimfa.Lsnmf(binned_fx_matrix_u, rank=rank, max_iter=200)
 
-                fctr_res = nimfa.mf_run(fctr)
+                fctr_res = fctr()
+                fctr_res_b = fctr_b()
+                fctr_res_bu = fctr_bu()
+
                 W = np.asarray(fctr_res.basis())
-
-                fctr_res_b = nimfa.mf_run(fctr_b)
-                fctr_res_bu = nimfa.mf_run(fctr_bu)
                 W_b = np.asarray(fctr_res_b.basis())
                 W_bu = np.asarray(fctr_res_bu.basis())
 
@@ -119,7 +132,7 @@ if __name__ == "__main__":
                 s_ari.append(ari_2)
                 s_ari_u.append(ari_2_u)
 
-        print "For Bins: ", bins
+        print "Completed for %s bins" % bins
         primary_ari.append((bins, np.mean(p_ari)))
         primary_ari_uniform.append((bins, np.mean(p_ari_u)))
         secondary_ari.append((bins, np.mean(s_ari)))
