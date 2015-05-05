@@ -98,10 +98,10 @@ if __name__ == "__main__":
     out_prefix = args.output_prefix
     out_dir = args.output_dir
 
-    with open(node_feature) as nf:
-        n_cols = len(nf.readline().strip().split(','))
+    refex_features = np.loadtxt(node_feature, delimiter=',')
+    np.savetxt(out_dir + '/out-' + out_prefix + '-ids.txt', X=refex_features[:, 0])
+    actual_fx_matrix = refex_features[:, 1:]
 
-    actual_fx_matrix = np.loadtxt(node_feature, delimiter=',', usecols=range(1, n_cols))
     n, f = actual_fx_matrix.shape
     print 'Number of Features: ', f
     print 'Number of Nodes: ', n

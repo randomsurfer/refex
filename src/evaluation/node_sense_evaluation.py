@@ -70,6 +70,7 @@ for i in xrange(50):
 
 final_str = ''
 for label in measurement_labels:
-    final_str += str(np.mean(aads[label])) + '\t'
-print '\t'.join(measurement_labels)
+    val = '%.2f' % np.mean(aads[label])
+    final_str += val + '\t'
+# print '\t'.join(measurement_labels)
 print final_str

@@ -8,7 +8,7 @@ if __name__ == '__main__':
         prev_graph_file = sys.argv[3]
         prev_mapping_file = sys.argv[4]
     except Exception:
-        print 'usage:: python %s <input_file> <output_file>' % sys.argv[0]
+        print 'usage:: python %s <input_file> <output_file> <prev_graph> <prev_mapping>' % sys.argv[0]
         sys.exit(1)
 
     author_names_to_author_ids = {}

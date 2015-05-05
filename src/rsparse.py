@@ -2,8 +2,6 @@ __author__ = 'pratik'
 
 import nimfa
 import numpy as np
-import cvxpy as cvx
-from numpy import linalg
 import argparse
 import mdl
 
@@ -33,56 +31,6 @@ G(.)(i) - denotes the i^th column vector of G.
 F(i)(.) - denotes the i^th row vector of F.
 '''
 
-# numpy 2d array slicing:
-# test = numpy.array([[1, 2], [3, 4], [5, 6]])
-# test[:,:] => full array
-# test[0,:] => 1st row
-# test[:,0] => 1st col
-# test[:,1] => 2nd col
-
-
-def glrd_sparse(V, G, F, r, err_V, err_F):
-    # sparsity threshold is num_nodes / num_roles
-    for k in xrange(r):
-        G_copy = np.copy(G)  # create local copies for excluding the k^th col and row of G and F resp.
-        F_copy = np.copy(F)
-        G_copy[:, k] = 0.0
-        F_copy[k, :] = 0.0
-
-        R = V - np.dot(G_copy, F_copy)  # compute residual
-
-        # Solve for optimal G(.)(k) with sparsity constraints
-        F_k = F[k, :]
-        x_star_G = linalg.lstsq(R.T, F_k.T)[0].T
-        x_G = cvx.Variable(x_star_G.shape[0])
-        objective_G = cvx.Minimize(cvx.norm2(x_star_G - x_G))
-        constraints_G = [x_G >= 0]
-        constraints_G += [cvx.norm1(x_G) <= err_V]
-        prob_G = cvx.Problem(objective_G, constraints_G)
-        result = prob_G.solve(solver='SCS')
-        if not np.isinf(result):
-            G_k_min = np.asarray(x_G.value)
-            G[:, k] = G_k_min[:, 0]
-        else:
-            print result
-
-        # Solve for optimal F(k)(.) with sparsity constraints
-        G_k = G[:, k]
-        x_star_F = linalg.lstsq(R, G_k)[0]
-        x_F = cvx.Variable(x_star_F.shape[0])
-        objective_F = cvx.Minimize(cvx.norm2(x_star_F - x_F))
-        constraints_F = [x_F >= 0]
-        constraints_F += [cvx.sum_entries(x_F) <= err_F]
-        prob_F = cvx.Problem(objective_F, constraints_F)
-        result = prob_F.solve(solver='SCS')
-        if not np.isinf(result):
-            F_k_min = np.asarray(x_F.value)
-            F[k, :] = F_k_min[0, :]
-        else:
-            print result
-
-    return G, F
-
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser(prog='compute glrd')
@@ -96,11 +44,10 @@ if __name__ == "__main__":
     out_prefix = args.output_prefix
     out_dir = args.output_dir
 
-    refex_features = np.loadtxt(node_feature, delimiter=',')
+    with open(node_feature) as nf:
+        n_cols = len(nf.readline().strip().split(','))
 
-    np.savetxt(out_dir + '/out-' + out_prefix + '-ids.txt', X=refex_features[:, 0])
-
-    actual_fx_matrix = refex_features[:, 1:]
+    actual_fx_matrix = np.loadtxt(node_feature, delimiter=',', usecols=range(1, n_cols))
     n, f = actual_fx_matrix.shape
     print 'Number of Features: ', f
     print 'Number of Nodes: ', n
@@ -115,12 +62,11 @@ if __name__ == "__main__":
     min_des_not_changed_counter = 0
     sparsity_threshold = 1.0
     for rank in xrange(1, max_roles + 1):
-        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=200)
-        lsnmf_fit = lsnmf()
-        G = np.asarray(lsnmf_fit.basis())
-        F = np.asarray(lsnmf_fit.coef())
+        snmf = nimfa.Snmf(actual_fx_matrix, seed="random_vcol", version='r', rank=rank, beta=1.0, eta=1.)
+        snmf_fit = snmf()
+        G = np.asarray(snmf_fit.basis())
+        F = np.asarray(snmf_fit.coef())
 
-        G, F = glrd_sparse(V=actual_fx_matrix, G=G, F=F, r=rank, err_V=sparsity_threshold, err_F=sparsity_threshold)
         code_length_G = mdlo.get_huffman_code_length(G)
         code_length_F = mdlo.get_huffman_code_length(F)
 
@@ -130,8 +76,9 @@ if __name__ == "__main__":
         model_cost = code_length_G * (G.shape[0] + G.shape[1]) + code_length_F * (F.shape[0] + F.shape[1])
         estimated_matrix = np.asarray(np.dot(G, F))
         loglikelihood = mdlo.get_log_likelihood(actual_fx_matrix, estimated_matrix)
+        err = snmf_fit.distance(metric='kl')
 
-        description_length = model_cost - loglikelihood
+        description_length = model_cost + err  #- loglikelihood
 
         if description_length < minimum_description_length:
             minimum_description_length = description_length
@@ -140,7 +87,7 @@ if __name__ == "__main__":
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 20:
+            if min_des_not_changed_counter == 10:
                 break
         try:
             print 'Number of Roles: %s, Model Cost: %.2f, -loglikelihood: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
