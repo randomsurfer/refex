@@ -5,7 +5,6 @@ import numpy as np
 import cvxpy as cvx
 from numpy import linalg
 import argparse
-import mdl
 
 '''
 V ~ GF is estimated using NMF for a factorization rank r.
@@ -97,59 +96,23 @@ if __name__ == "__main__":
     out_dir = args.output_dir
 
     refex_features = np.loadtxt(node_feature, delimiter=',')
-
-    np.savetxt(out_dir + '/out-' + out_prefix + '-ids.txt', X=refex_features[:, 0])
-
     actual_fx_matrix = refex_features[:, 1:]
+
     n, f = actual_fx_matrix.shape
     print 'Number of Features: ', f
     print 'Number of Nodes: ', n
 
-    number_bins = int(np.log2(n))
-    max_roles = min([n, f])
-    best_G = None
-    best_F = None
-
-    mdlo = mdl.MDL(number_bins)
-    minimum_description_length = 1e20
-    min_des_not_changed_counter = 0
     sparsity_threshold = 1.0
-    for rank in xrange(1, max_roles + 1):
-        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=200)
-        lsnmf_fit = lsnmf()
-        G = np.asarray(lsnmf_fit.basis())
-        F = np.asarray(lsnmf_fit.coef())
+    for i in xrange(1, 6):
+        for rank in xrange(10, 20 + 1):
+            lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=200)
+            lsnmf_fit = lsnmf()
+            G = np.asarray(lsnmf_fit.basis())
+            F = np.asarray(lsnmf_fit.coef())
 
-        G, F = glrd_sparse(V=actual_fx_matrix, G=G, F=F, r=rank, err_V=sparsity_threshold, err_F=sparsity_threshold)
-        code_length_G = mdlo.get_huffman_code_length(G)
-        code_length_F = mdlo.get_huffman_code_length(F)
+            G, F = glrd_sparse(V=actual_fx_matrix, G=G, F=F, r=rank, err_V=sparsity_threshold, err_F=sparsity_threshold)
 
-        # For total bit length:
-        # model_cost = code_length_W + code_length_H  # For total bit length
-        # For avg. symbol bit length:
-        model_cost = code_length_G * (G.shape[0] + G.shape[1]) + code_length_F * (F.shape[0] + F.shape[1])
-        estimated_matrix = np.asarray(np.dot(G, F))
-        loglikelihood = mdlo.get_log_likelihood(actual_fx_matrix, estimated_matrix)
-
-        description_length = model_cost - loglikelihood
-
-        if description_length < minimum_description_length:
-            minimum_description_length = description_length
-            best_G = np.copy(G)
-            best_F = np.copy(F)
-            min_des_not_changed_counter = 0
-        else:
-            min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 10:
-                break
-        try:
-            print 'Number of Roles: %s, Model Cost: %.2f, -loglikelihood: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
-              % (rank, model_cost, loglikelihood, description_length, minimum_description_length, best_G.shape[1])
-        except Exception:
-            continue
-
-
-    print 'MDL has not changed for these many iters:', min_des_not_changed_counter
-    print '\nMDL: %.2f, Roles: %s' % (minimum_description_length, best_G.shape[1])
-    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-nodeRoles.txt", X=best_G)
-    np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-roleFeatures.txt", X=best_F)
+            w_out = '%s-%s-%s-nodeRoles.txt' % (rank, i, out_prefix)
+            h_out = '%s-%s-%s-roleFeatures.txt' % (rank, i, out_prefix)
+            np.savetxt(out_dir + w_out, X=G)
+            np.savetxt(out_dir + h_out, X=F)
