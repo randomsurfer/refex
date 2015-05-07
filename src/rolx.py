@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
 
     for rank in xrange(1, max_roles + 1):
-        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=1000)
+        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=500)
         lsnmf_fit = lsnmf()
         W = np.asarray(lsnmf_fit.basis())
         H = np.asarray(lsnmf_fit.coef())

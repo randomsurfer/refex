@@ -44,10 +44,10 @@ if __name__ == "__main__":
     out_prefix = args.output_prefix
     out_dir = args.output_dir
 
-    with open(node_feature) as nf:
-        n_cols = len(nf.readline().strip().split(','))
+    refex_features = np.loadtxt(node_feature, delimiter=',')
+    np.savetxt(out_dir + '/out-' + out_prefix + '-ids.txt', X=refex_features[:, 0])
+    actual_fx_matrix = refex_features[:, 1:]
 
-    actual_fx_matrix = np.loadtxt(node_feature, delimiter=',', usecols=range(1, n_cols))
     n, f = actual_fx_matrix.shape
     print 'Number of Features: ', f
     print 'Number of Nodes: ', n
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     min_des_not_changed_counter = 0
     sparsity_threshold = 1.0
     for rank in xrange(1, max_roles + 1):
-        snmf = nimfa.Snmf(actual_fx_matrix, seed="random_vcol", version='r', rank=rank, beta=1.0, eta=1.)
+        snmf = nimfa.Snmf(actual_fx_matrix, seed="random_vcol", version='r', rank=rank, beta=2.0)
         snmf_fit = snmf()
         G = np.asarray(snmf_fit.basis())
         F = np.asarray(snmf_fit.coef())

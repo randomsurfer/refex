@@ -94,6 +94,7 @@ for key in p1.keys():
                 node_pairs[block[i]].append(block[j])
                 total_pairs += 1
 
+print '*'*50
 print 'Total Pairs: ', total_pairs
 
 node_to_block_id_for_p1 = get_block_id_for_node(p1)
@@ -101,15 +102,21 @@ node_to_block_id_for_p2 = get_block_id_for_node(p2)
 
 comparison_block_order_for_p1 = []
 comparison_block_order_for_p2 = []
+skipped_keys = 0
 
 for node in sorted(node_to_block_id_for_p1.keys()):
-    block_id_for_node_in_p1 = node_to_block_id_for_p1[node]
-    block_id_for_node_in_p2 = node_to_block_id_for_p2[node]
+    try:
+        block_id_for_node_in_p1 = node_to_block_id_for_p1[node]
+        block_id_for_node_in_p2 = node_to_block_id_for_p2[node]
+    except KeyError:
+        skipped_keys += 1
+        continue
 
     if (not block_id_for_node_in_p1 in comparison_block_order_for_p1) and (not block_id_for_node_in_p2 in comparison_block_order_for_p2):
         comparison_block_order_for_p1.append(block_id_for_node_in_p1)
         comparison_block_order_for_p2.append(block_id_for_node_in_p2)
 
+print 'Skipped Keys:', skipped_keys
 for block_id in sorted(p1.keys()):
     if block_id not in comparison_block_order_for_p1:
         comparison_block_order_for_p1.append(block_id)
@@ -176,8 +183,8 @@ for a in node_pairs.keys():
             cosine_similarity = tn / td
             cosine_similarities.append(cosine_similarity)
         c += 1
-        if c % 1000 == 0:
-            print 'Completed %s Pairs' % c
+        # if c % 1000 == 0:
+        #     print 'Completed %s Pairs' % c
 
 cosine_similarities = np.asarray(cosine_similarities)
 np.save(output_file, cosine_similarities)
