@@ -61,5 +61,5 @@ if __name__ == "__main__":
             w_out = '%s-%s-%s-nodeRoles.txt' % (rank, i, out_prefix)
             h_out = '%s-%s-%s-roleFeatures.txt' % (rank, i, out_prefix)
 
-            np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-nodeRoles.txt", X=G)
-            np.savetxt(out_dir + '/' + 'out-' + out_prefix + "-roleFeatures.txt", X=F)
+            np.savetxt(out_dir + w_out, X=G)
+            np.savetxt(out_dir + h_out, X=F)
