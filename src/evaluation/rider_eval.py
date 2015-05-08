@@ -4,6 +4,7 @@ import numpy as np
 import nimfa
 import mdl
 from sklearn import metrics
+import igraph as ig
 import pickle
 
 
@@ -68,7 +69,7 @@ if __name__ == "__main__":
     model_costs = []
     model_costs_uniform = []
 
-    for bins in xrange(1, 41):
+    for bins in xrange(1, 36):
         fx_b = features.Features()
         fx_bu = features.Features()
 
@@ -122,10 +123,14 @@ if __name__ == "__main__":
                 estimated_primary, estimated_secondary = get_role_assignment(W_b)
                 estimated_primary_u, estimated_secondary_u = get_role_assignment(W_bu)
 
-                ari_1 = metrics.adjusted_rand_score(actual_primary, estimated_primary)
-                ari_1_u = metrics.adjusted_rand_score(actual_primary, estimated_primary_u)
-                ari_2 = metrics.adjusted_rand_score(actual_secondary, estimated_secondary)
-                ari_2_u = metrics.adjusted_rand_score(actual_secondary, estimated_secondary_u)
+                # ari_1 = metrics.adjusted_rand_score(actual_primary, estimated_primary)
+                # ari_1_u = metrics.adjusted_rand_score(actual_primary, estimated_primary_u)
+                # ari_2 = metrics.adjusted_rand_score(actual_secondary, estimated_secondary)
+                # ari_2_u = metrics.adjusted_rand_score(actual_secondary, estimated_secondary_u)
+                ari_1 = ig.compare_communities(actual_primary, estimated_primary, method="rand")
+                ari_1_u = ig.compare_communities(actual_primary, estimated_primary_u, method="rand")
+                ari_2 = ig.compare_communities(actual_secondary, estimated_secondary, method="rand")
+                ari_2_u = ig.compare_communities(actual_secondary, estimated_secondary_u, method="rand")
 
                 p_ari.append(ari_1)
                 p_ari_u.append(ari_1_u)

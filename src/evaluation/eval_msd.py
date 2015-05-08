@@ -94,6 +94,8 @@ if __name__ == "__main__":
                 fname_id = os.path.join(input_folder, fname_id)
 
                 node_roles = np.loadtxt(fname)
+                node_roles[node_roles <= 0.0] = 0.0
+
                 node_ids = np.loadtxt(fname_id)
                 node_id_seq = [int(node) for node in node_ids]
 
@@ -136,23 +138,25 @@ if __name__ == "__main__":
                     random_sense_n = get_node_sense_matrix(E_ran_n, E_n_ones)
 
                     for j, label in enumerate(global_measurement_labels):
+                        # if idx == 1 and jdx >= 8:
+                        #     break
                         label_measurement = node_sense_g[:, j]
                         random_label_measurement = random_sense_g[:, j]
-                        aad = np.mean(np.square(label_measurement - random_label_measurement))
+                        aad = np.mean(np.abs(label_measurement - random_label_measurement))
                         aads_global_loop[label].append(aad)
                         gbl.append(aad)
 
                     for j, label in enumerate(neighborhood_measurement_labels):
                         label_measurement = node_sense_n[:, j]
                         random_label_measurement = random_sense_n[:, j]
-                        aad = np.mean(np.square(label_measurement - random_label_measurement))
+                        aad = np.mean(np.abs(label_measurement - random_label_measurement))
                         aads_neighbours_loop[label].append(aad)
                         nl.append(aad)
 
                     for j, label in enumerate(local_measurement_labels):
                         label_measurement = node_sense_l[:, j]
                         random_label_measurement = random_sense_l[:, j]
-                        aad = np.mean(np.square(label_measurement - random_label_measurement))
+                        aad = np.mean(np.abs(label_measurement - random_label_measurement))
                         aads_local_loop[label].append(aad)
                         ll.append(aad)
 
@@ -171,19 +175,19 @@ if __name__ == "__main__":
             wt_degree_aad[idx][jdx] = np.mean(aads_local_loop['Wt. Degree'])
             clus_coeff_aad[idx][jdx] = np.mean(aads_local_loop['Clustering Coeff'])
 
-    np.savetxt('msd_global.txt', aad_global)
-    np.savetxt('msd_neighbourhood.txt', aad_neighbourhood)
-    np.savetxt('msd_local.txt', aad_local)
-    np.savetxt('msd_between.txt', between_aad)
-    np.savetxt('msd_closeness.txt', closeness_aad)
-    np.savetxt('msd_bcc.txt', bcc_aad)
-    np.savetxt('msd_ego_0_deg.txt', ego_zero_deg_aad)
-    np.savetxt('msd_ego_1_deg.txt', ego_one_deg_aad)
-    np.savetxt('msd_ego_0_wt.txt', ego_zero_wt_aad)
-    np.savetxt('msd_ego_1_wt.txt', ego_one_wt_aad)
-    np.savetxt('msd_degree.txt', degree_aad)
-    np.savetxt('msd_wt_degree.txt', wt_degree_aad)
-    np.savetxt('msd_clus_coeff.txt', clus_coeff_aad)
+    np.savetxt('aad_global.txt', aad_global)
+    np.savetxt('aad_neighbourhood.txt', aad_neighbourhood)
+    np.savetxt('aad_local.txt', aad_local)
+    # np.savetxt('msd_between.txt', between_aad)
+    # np.savetxt('msd_closeness.txt', closeness_aad)
+    # np.savetxt('msd_bcc.txt', bcc_aad)
+    # np.savetxt('msd_ego_0_deg.txt', ego_zero_deg_aad)
+    # np.savetxt('msd_ego_1_deg.txt', ego_one_deg_aad)
+    # np.savetxt('msd_ego_0_wt.txt', ego_zero_wt_aad)
+    # np.savetxt('msd_ego_1_wt.txt', ego_one_wt_aad)
+    # np.savetxt('msd_degree.txt', degree_aad)
+    # np.savetxt('msd_wt_degree.txt', wt_degree_aad)
+    # np.savetxt('msd_clus_coeff.txt', clus_coeff_aad)
 
     # from pandas import *
     # # import pylab

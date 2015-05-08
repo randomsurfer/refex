@@ -11,6 +11,7 @@ def get_node_role_assignment(node_role_matrix_with_ids):
     role_assignments = {}
 
     for i in xrange(n):
+        node_id = node_role_matrix_with_ids[i][0]
         row = node_role_matrix_with_ids[i, 1:]
         reversed_sorted_indices = row.argsort()[-2:][::-1]
 
@@ -22,7 +23,7 @@ def get_node_role_assignment(node_role_matrix_with_ids):
         if node_role_matrix_with_ids[i][secondary_role] <= 0.0:
             secondary_role = -1
 
-        role_assignments[i] = (primary_role, secondary_role)
+        role_assignments[node_id] = (primary_role, secondary_role)
     return role_assignments
 
 
@@ -91,6 +92,7 @@ if __name__ == "__main__":
     roles_assignments = get_node_role_assignment(node_roles_with_id)
 
     primary_blocks, secondary_blocks = get_role_blocks(roles_assignments)
+    # secondary_blocks, primary_blocks = get_role_blocks(roles_assignments)
 
     primary_node_pairs = defaultdict(list)
 
@@ -115,10 +117,12 @@ if __name__ == "__main__":
     c = 0
 
     bet_diff = []
+    closeness_diff = []
     bcc_diff = []
     ew0_diff = []
     ed0_diff = []
     clusc_diff = []
+    degree_diff = []
 
     for a in primary_node_pairs.keys():
         a_t = []
@@ -136,8 +140,14 @@ if __name__ == "__main__":
         edeg0_at = normed_full_measure_matrix_one[a][labels['ed0']]
         edeg0_atdt = normed_full_measure_matrix_two[a][labels['ed0']]
 
-        clus_at =  normed_full_measure_matrix_one[a][labels['clusc']]
+        clus_at = normed_full_measure_matrix_one[a][labels['clusc']]
         clus_atdt = normed_full_measure_matrix_two[a][labels['clusc']]
+
+        close_at = normed_full_measure_matrix_one[a][labels['close']]
+        close_atdt = normed_full_measure_matrix_two[a][labels['close']]
+
+        deg_at = normed_full_measure_matrix_one[a][labels['deg']]
+        deg_atdt = normed_full_measure_matrix_two[a][labels['deg']]
 
         for b in primary_node_pairs[a]:
             b_t = []
@@ -149,6 +159,9 @@ if __name__ == "__main__":
             bcc_bt = normed_full_measure_matrix_one[b][labels['bcc']]
             bcc_btdt = normed_full_measure_matrix_two[b][labels['bcc']]
 
+            close_bt = normed_full_measure_matrix_one[b][labels['close']]
+            close_btdt = normed_full_measure_matrix_two[b][labels['close']]
+
             ew0_bt = normed_full_measure_matrix_one[b][labels['ew0']]
             ew0_btdt = normed_full_measure_matrix_two[b][labels['ew0']]
 
@@ -158,11 +171,18 @@ if __name__ == "__main__":
             clus_bt =  normed_full_measure_matrix_one[b][labels['clusc']]
             clus_btdt = normed_full_measure_matrix_two[b][labels['clusc']]
 
+            deg_bt = normed_full_measure_matrix_one[b][labels['deg']]
+            deg_btdt = normed_full_measure_matrix_two[b][labels['deg']]
+
             bet_diff.append(get_diff(between_at, between_atdt, between_bt, between_btdt))
+            closeness_diff.append(get_diff(close_at, close_atdt, close_bt, close_btdt))
             bcc_diff.append(get_diff(bcc_at, bcc_atdt, bcc_bt, bcc_btdt))
+
             ew0_diff.append(get_diff(ew0_at, ew0_atdt, ew0_bt, ew0_btdt))
             ed0_diff.append(get_diff(edeg0_at, edeg0_atdt, edeg0_bt, edeg0_btdt))
-            clusc_diff.append(get_diff(clus_at, clus_atdt, clus_bt, clus_btdt))
 
-    final_diff = [bet_diff, bcc_diff, ew0_diff, ed0_diff, clusc_diff]
+            clusc_diff.append(get_diff(clus_at, clus_atdt, clus_bt, clus_btdt))
+            degree_diff.append(get_diff(deg_at, deg_atdt, deg_bt, deg_btdt))
+
+    final_diff = [bet_diff, bcc_diff, ew0_diff, ed0_diff, clusc_diff, closeness_diff, degree_diff]
     np.savetxt(out_file, np.asarray(final_diff))
