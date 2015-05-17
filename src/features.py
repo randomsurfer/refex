@@ -468,7 +468,7 @@ class Features:
         self.no_of_vertices = self.graph.number_of_nodes()
         self.init_log_binned_fx_buckets()
 
-        fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+        fx_names = self.get_current_fx_names()
         self.compute_log_binned_features(fx_names)
 
         graph_nodes = sorted(self.graph.nodes())
@@ -499,7 +499,7 @@ class Features:
         self.no_of_vertices = self.graph.number_of_nodes()
         self.init_log_binned_fx_buckets()
 
-        fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+        fx_names = self.get_current_fx_names()
         self.compute_log_binned_features(fx_names)
 
         graph_nodes = sorted(self.graph.nodes())
@@ -515,18 +515,40 @@ class Features:
             fx_matrix.append(tuple(feature_row))
         return np.array(fx_matrix)
 
-    def only_riders_as_dict(self, graph_file, rider_dir, bins=15, all_features=False):
+    def get_current_fx_names(self):
+        return [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+
+    def prune_riders_fx_and_reassign_to_graph(self, riders_fx_matrix):
+        pruned_riders_fx = self.prune_matrix(riders_fx_matrix, 0.0)
+        curr_fx_names = self.get_current_fx_names()
+        print 'Current Fx: ', len(curr_fx_names)
+        graph_nodes = sorted(self.graph.nodes())
+
+        for n in graph_nodes:
+            for fx in curr_fx_names:
+                self.graph.node[n].pop(fx, None)
+
+        n, f = pruned_riders_fx.shape
+        for i in xrange(n):
+            for j in xrange(f):
+                fx_name = "fx_" + str(j)
+                self.graph.node[i][fx_name] = pruned_riders_fx[i][j]
+
+        curr_fx_names = self.get_current_fx_names()
+        print 'Pruned Fx: ', len(curr_fx_names)
+
+    def only_riders_as_dict(self, graph_file, rider_dir, bins=15, bin_features=True):
         # Compute rider features. Code is redundant, accommodates an independent riders flow in riders.py
         # This will screw the graph features if used with anything else, pls refrain from doing that.
         self.load_graph(graph_file)
-        if all_features:
+        if not bin_features:
             self.compute_pure_rider_block_features(rider_dir, attrs=['wgt'])
         else:
             self.compute_rider_binned_block_features(rider_dir, attrs=['wgt'], bins=bins)
         self.no_of_vertices = self.graph.number_of_nodes()
         self.init_log_binned_fx_buckets()
 
-        fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+        fx_names = self.get_current_fx_names()
         self.compute_log_binned_features(fx_names)
 
         graph_nodes = sorted(self.graph.nodes())
@@ -551,7 +573,7 @@ class Features:
         self.no_of_vertices = self.graph.number_of_nodes()
         self.init_log_binned_fx_buckets()
 
-        fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+        fx_names = self.get_current_fx_names()
         self.compute_log_binned_features(fx_names)
 
         graph_nodes = sorted(self.graph.nodes())
@@ -689,6 +711,13 @@ class Features:
                                             self.graph.node[vertex]['xesa-'+attr+'1-'+fx_name_base] \
                                                 += self.graph.node[n2]['wsa-'+attr+'-'+fx_name_base]
 
+    def init_vertex_egonet(self):
+        for n1 in self.graph.nodes():
+            if n1 not in self.vertex_egonets:
+                vertex_lvl_0_egonet = self.get_egonet_members(n1)
+                vertex_lvl_1_egonet = self.get_egonet_members(n1, level=1)
+                self.vertex_egonets[n1] = [vertex_lvl_0_egonet, vertex_lvl_1_egonet]
+
     def compute_primitive_features(self, rider_fx=False, rider_dir='INVALID_PATH'):
         # computes the primitive local features
         # computes the rider based features if rider_fx is True
@@ -713,7 +742,7 @@ class Features:
         self.no_of_vertices = self.graph.number_of_nodes()
         self.init_log_binned_fx_buckets()
 
-        fx_names = [attr for attr in sorted(self.graph.node[self.graph.nodes()[0]])]
+        fx_names = self.get_current_fx_names()
         self.compute_log_binned_features(fx_names)
 
     def update_feature_matrix_to_graph(self, feature_matrix):
@@ -788,11 +817,14 @@ class Features:
             for node in vertex_lvl_0_egonet:
                 fx_value += self.graph.node[node][fx_name]
 
-            self.graph.node[vertex][fx_name + str(iter_no) + sum_fx + level_id] = fx_value
-            self.graph.node[vertex][fx_name + str(iter_no) + mean_fx + level_id] = fx_value / vertex_lvl_0_egonet_size
+            s_fx_name = fx_name + '-' + str(iter_no) + sum_fx + level_id
+            m_fx_name = fx_name + '-' + str(iter_no) + mean_fx + level_id
 
-            new_fx_list.append(fx_name + str(iter_no) + sum_fx + level_id)
-            new_fx_list.append(fx_name + str(iter_no) + mean_fx + level_id)
+            self.graph.node[vertex][s_fx_name] = fx_value
+            self.graph.node[vertex][m_fx_name] = float(fx_value) / vertex_lvl_0_egonet_size
+
+            new_fx_list.append(s_fx_name)
+            new_fx_list.append(m_fx_name)
 
         # level_id = '1'
         # for fx_name in fx_list:
@@ -883,7 +915,7 @@ class Features:
             vertical_binned_vertices = self.vertical_bin(node_fx_values)
             for vertex in vertical_binned_vertices.keys():
                 binned_value = vertical_binned_vertices[vertex]
-                self.graph.node[vertex][feature] = binned_value
+                self.graph.node[vertex][feature] = float(binned_value)
 
     def create_initial_feature_matrix(self):
         # TODO: Code replicated between this one and the next function. Refactor.
@@ -891,7 +923,7 @@ class Features:
         graph_nodes = sorted(self.graph.nodes())
         fx_names = []
         dtype = []
-        for fx_name in sorted(self.graph.node[graph_nodes[0]].keys()):
+        for fx_name in self.get_current_fx_names():
             fx_names.append(fx_name)
             dtype.append(tuple([fx_name, '>f4']))
 
