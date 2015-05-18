@@ -70,9 +70,6 @@ if __name__ == "__main__":
         code_length_G = mdlo.get_huffman_code_length(G)
         code_length_F = mdlo.get_huffman_code_length(F)
 
-        # For total bit length:
-        # model_cost = code_length_W + code_length_H  # For total bit length
-        # For avg. symbol bit length:
         model_cost = code_length_G * (G.shape[0] + G.shape[1]) + code_length_F * (F.shape[0] + F.shape[1])
         estimated_matrix = np.asarray(np.dot(G, F))
         loglikelihood = mdlo.get_log_likelihood(actual_fx_matrix, estimated_matrix)
@@ -87,11 +84,12 @@ if __name__ == "__main__":
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
-            if min_des_not_changed_counter == 10:
+            if min_des_not_changed_counter == 5:
                 break
         try:
-            print 'Number of Roles: %s, Model Cost: %.2f, -loglikelihood: %.2f, Description Length: %.2f, MDL: %.2f (%s)' \
-              % (rank, model_cost, loglikelihood, description_length, minimum_description_length, best_G.shape[1])
+            print 'Number of Roles: %s, Model Cost: %.2f, -loglikelihood: %.2f, ' \
+                  'Description Length: %.2f, MDL: %.2f (%s)' \
+                  % (rank, model_cost, loglikelihood, description_length, minimum_description_length, best_G.shape[1])
         except Exception:
             continue
 

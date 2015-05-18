@@ -114,10 +114,10 @@ if __name__ == "__main__":
     mdlo = mdl.MDL(number_bins)
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
-    diversity_threshold = 0.15 # fixing it to 0.01
+    diversity_threshold = 0.25 # fixing it to 0.25
 
     for rank in xrange(1, max_roles + 1):
-        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=200)
+        lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
         lsnmf_fit = lsnmf()
         G = np.asarray(lsnmf_fit.basis())
         F = np.asarray(lsnmf_fit.coef())
@@ -138,7 +138,9 @@ if __name__ == "__main__":
         if description_length < minimum_description_length:
             minimum_description_length = description_length
             best_G = np.copy(G)
+            best_G[best_G <= 0.0] = 0.0
             best_F = np.copy(F)
+            best_F[best_F <= 0.0] = 0.0
             min_des_not_changed_counter = 0
         else:
             min_des_not_changed_counter += 1
