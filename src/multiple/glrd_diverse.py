@@ -104,16 +104,18 @@ if __name__ == "__main__":
     print 'Number of Features: ', f
     print 'Number of Nodes: ', n
 
-    diversity_threshold = 0.15
+    diversity_threshold = 0.25
 
     for i in xrange(1, 6):
-        for rank in xrange(10, 20 + 1):
+        for rank in xrange(5, 14 + 1):
             lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=200)
             lsnmf_fit = lsnmf()
             G = np.asarray(lsnmf_fit.basis())
             F = np.asarray(lsnmf_fit.coef())
 
             G, F = glrd_diverse(V=actual_fx_matrix, G=G, F=F, r=rank, err_V=diversity_threshold, err_F=diversity_threshold)
+            G[G <= 0.0] = 0.0
+            F[F <= 0.0] = 0.0
 
             w_out = '%s-%s-%s-nodeRoles.txt' % (rank, i, out_prefix)
             h_out = '%s-%s-%s-roleFeatures.txt' % (rank, i, out_prefix)

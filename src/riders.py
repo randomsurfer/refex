@@ -3,6 +3,7 @@ import mdl
 import argparse
 import numpy as np
 import nimfa
+from collections import defaultdict
 
 
 if __name__ == "__main__":
@@ -12,6 +13,7 @@ if __name__ == "__main__":
     argument_parser.add_argument('-rd', '--rider-dir', help='rider directory', required=True)
     argument_parser.add_argument('-od', '--output-dir', help='final output dir', required=True)
     argument_parser.add_argument('-p', '--output-prefix', help='prefix', required=True)
+    argument_parser.add_argument('-rec', '--recursive-rider', help='recursive rider features', action='store_true')
 
     args = argument_parser.parse_args()
 
@@ -20,15 +22,70 @@ if __name__ == "__main__":
     bins = int(args.bins)
     out_dir = args.output_dir
     prefix = args.output_prefix
+    recursive_rider_fx = args.recursive_rider
 
     fx = features.Features()
 
-    binned_fx_matrix = fx.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True)
-    print 'Prev Shape: ', binned_fx_matrix.shape[1]
-    actual_fx_matrix = fx.prune_matrix(binned_fx_matrix, 0.0)
+    if recursive_rider_fx:
+        rider_features = fx.only_riders(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True)
+        fx.prune_riders_fx_and_reassign_to_graph(rider_features)
+        fx.init_vertex_egonet()
+        primitive_riders_fx_matrix = fx.create_initial_feature_matrix()
+
+        prev_pruned_fx_matrix = primitive_riders_fx_matrix
+
+        prev_pruned_fx_size = len(list(prev_pruned_fx_matrix.dtype.names))
+        no_iterations = 0
+        max_diff = 1.0
+
+        while no_iterations <= fx.MAX_ITERATIONS:
+            current_iteration_pruned_fx_matrix = fx.compute_recursive_features(prev_fx_matrix=prev_pruned_fx_matrix,
+                                                                               iter_no=no_iterations, max_dist=max_diff)
+
+            if current_iteration_pruned_fx_matrix is None:
+                print 'No new features added, all pruned. Exiting!'
+                break
+
+            current_pruned_fx_size = len(list(current_iteration_pruned_fx_matrix.dtype.names))
+
+            print 'Iteration: %s, Number of Features: %s' % (no_iterations, current_pruned_fx_size)
+
+            if current_pruned_fx_size == prev_pruned_fx_size:
+                print 'No new features added, Exiting!'
+                break
+
+            # update the latest feature matrix to the graph
+            fx.update_feature_matrix_to_graph(current_iteration_pruned_fx_matrix)
+
+            # update the previous iteration feature matrix with the latest one
+            prev_pruned_fx_matrix = current_iteration_pruned_fx_matrix
+            prev_pruned_fx_size = current_pruned_fx_size
+
+            # increment feature similarity threshold by 1
+            max_diff += 1.0
+            no_iterations += 1
+
+        fx_names = fx.get_current_fx_names()
+        rider_features = defaultdict(list)
+        graph_nodes = sorted(fx.graph.nodes())
+
+        for node in graph_nodes:
+            feature_row = []
+            for fx_name in fx_names:
+                feature_row.append(fx.graph.node[node][fx_name])
+            rider_features[node] = feature_row
+    else:
+        rider_features = fx.only_riders_as_dict(graph_file=graph_file, rider_dir=rider_dir, bins=bins, bin_features=True)
+
+    actual_fx_matrix = []
+    for node in sorted(rider_features.keys()):
+        actual_fx_matrix.append(rider_features[node])
+
+    actual_fx_matrix = np.array(actual_fx_matrix)
 
     n, f = actual_fx_matrix.shape
     print 'Number of Features: ', f
+    print 'Number of Nodes: ', n
 
     fx_matrix_with_node_ids = np.zeros((n, f+1))
     fx_matrix_with_node_ids[:, 0] = np.array([float(node) for node in xrange(n)])
@@ -55,9 +112,6 @@ if __name__ == "__main__":
         code_length_W = mdlo.get_huffman_code_length(W)
         code_length_H = mdlo.get_huffman_code_length(H)
 
-        # For total bit length:
-        # model_cost = code_length_W + code_length_H  # For total bit length
-        # For avg. symbol bit length:
         model_cost = code_length_W * (W.shape[0] + W.shape[1]) + code_length_H * (H.shape[0] + H.shape[1])
         loglikelihood = mdlo.get_log_likelihood(actual_fx_matrix, estimated_matrix)
 

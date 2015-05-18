@@ -4,35 +4,8 @@ import nimfa
 import numpy as np
 import argparse
 
-'''
-V ~ GF is estimated using NMF for a factorization rank r.
-
-where,
-V = n * f, node-feature matrix
-G = n * r, node-role matrix
-F = r * f, role-feature matrix
-
-For GLRD,
-
-1. Iterate for  k = 1 to r (and for each role),
-   Repeat steps 2 to 9. 'r' is the factorization rank/(# of roles) and is input to the program.
-2. Calculate V ~ GF, using NMF
-3. R = V - G(.)(!k) * F(!k)(.)  # residual
-4. Calculate G(.)(!k) by solving for x as:
-5. x_star = argmin_x ||R - xF(k)(.)||_2
-6. G(.)(!k) = argmin_x ||x_star - x||_2 s.t. g_i(x) <= epsilon_i: for all i
-7. Update G
-8. Similarly, compute F(k)(.)
-9. Update F
-
-where,
-G(.)(i) - denotes the i^th column vector of G.
-F(i)(.) - denotes the i^th row vector of F.
-'''
-
-
 if __name__ == "__main__":
-    argument_parser = argparse.ArgumentParser(prog='compute glrd')
+    argument_parser = argparse.ArgumentParser(prog='compute corex right sparse')
     argument_parser.add_argument('-nf', '--node-feature', help='node-feature matrix file', required=True)
     argument_parser.add_argument('-o', '--output-prefix', help='glrd output prefix', required=True)
     argument_parser.add_argument('-od', '--output-dir', help='glrd output dir', required=True)
@@ -52,7 +25,7 @@ if __name__ == "__main__":
 
     sparsity_threshold = 2.0
     for i in xrange(1, 6):
-        for rank in xrange(10, 20 + 1):
+        for rank in xrange(5, 14 + 1):
             snmf = nimfa.Snmf(actual_fx_matrix, seed="random_vcol", version='r', rank=rank, beta=2.0)
             snmf_fit = snmf()
             G = np.asarray(snmf_fit.basis())

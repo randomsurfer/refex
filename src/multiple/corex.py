@@ -6,7 +6,7 @@ import numpy as np
 
 
 if __name__ == "__main__":
-    argument_parser = argparse.ArgumentParser(prog='compute coridex')
+    argument_parser = argparse.ArgumentParser(prog='compute corex')
     argument_parser.add_argument('-nf', '--node-feature', help='node-feature matrix file', required=True)
     argument_parser.add_argument('-o', '--output-prefix', help='glrd output prefix', required=True)
     argument_parser.add_argument('-od', '--output-dir', help='glrd output dir', required=True)
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     print 'Number of Nodes: ', n
 
     for i in xrange(1, 6):
-        for rank in xrange(10, 21 + 1):
+        for rank in xrange(5, 14 + 1):
             lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=500)
             lsnmf_fit = lsnmf()
             W = np.asarray(lsnmf_fit.basis())

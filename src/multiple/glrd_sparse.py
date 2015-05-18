@@ -32,13 +32,6 @@ G(.)(i) - denotes the i^th column vector of G.
 F(i)(.) - denotes the i^th row vector of F.
 '''
 
-# numpy 2d array slicing:
-# test = numpy.array([[1, 2], [3, 4], [5, 6]])
-# test[:,:] => full array
-# test[0,:] => 1st row
-# test[:,0] => 1st col
-# test[:,1] => 2nd col
-
 
 def glrd_sparse(V, G, F, r, err_V, err_F):
     # sparsity threshold is num_nodes / num_roles
@@ -104,13 +97,15 @@ if __name__ == "__main__":
 
     sparsity_threshold = 1.0
     for i in xrange(1, 6):
-        for rank in xrange(10, 20 + 1):
+        for rank in xrange(5, 14 + 1):
             lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=200)
             lsnmf_fit = lsnmf()
             G = np.asarray(lsnmf_fit.basis())
             F = np.asarray(lsnmf_fit.coef())
 
             G, F = glrd_sparse(V=actual_fx_matrix, G=G, F=F, r=rank, err_V=sparsity_threshold, err_F=sparsity_threshold)
+            G[G <= 0.0] = 0.0
+            F[F <= 0.0] = 0.0
 
             w_out = '%s-%s-%s-nodeRoles.txt' % (rank, i, out_prefix)
             h_out = '%s-%s-%s-roleFeatures.txt' % (rank, i, out_prefix)
