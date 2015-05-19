@@ -24,7 +24,7 @@ if __name__ == "__main__":
     print 'Number of Nodes: ', n
 
     for i in xrange(1, 6):
-        for rank in xrange(5, 14 + 1):
+        for rank in xrange(20, 29 + 1):
             lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=500)
             lsnmf_fit = lsnmf()
             W = np.asarray(lsnmf_fit.basis())

@@ -54,29 +54,29 @@ if __name__ == "__main__":
     node_measurement_file = args.node_measurement
     node_measurements = np.loadtxt(node_measurement_file, delimiter=',')
 
-    methods = ['coridex', 'csparse', 'rsparse', 'riders', 'rolx', 'sparse', 'diverse']
-    methods_id = {'coridex': 'coridex', 'csparse': 'coridex', 'rsparse': 'coridex',
+    methods = ['corex', 'corex_s', 'corex_r', 'riders', 'rolx', 'sparse', 'diverse']
+    methods_id = {'corex': 'corex', 'corex_s': 'corex', 'corex_r': 'corex',
                   'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
     global_measurement_labels = ['Betweenness', 'Closeness', '#BCC']
     neighborhood_measurement_labels = ['Ego_0_Deg', 'Ego_1_Deg', 'Ego_0_Wt', 'Ego_1_Wt']
     local_measurement_labels = ['Degree', 'Wt. Degree', 'Clustering Coeff']
 
-    between_aad = np.zeros((7, 11))
-    closeness_aad = np.zeros((7, 11))
-    bcc_aad = np.zeros((7, 11))
+    between_aad = np.zeros((7, 10))
+    closeness_aad = np.zeros((7, 10))
+    bcc_aad = np.zeros((7, 10))
 
-    ego_zero_deg_aad = np.zeros((7, 11))
-    ego_zero_wt_aad = np.zeros((7, 11))
-    ego_one_deg_aad = np.zeros((7, 11))
-    ego_one_wt_aad = np.zeros((7, 11))
+    ego_zero_deg_aad = np.zeros((7, 10))
+    ego_zero_wt_aad = np.zeros((7, 10))
+    ego_one_deg_aad = np.zeros((7, 10))
+    ego_one_wt_aad = np.zeros((7, 10))
 
-    degree_aad = np.zeros((7, 11))
-    wt_degree_aad = np.zeros((7, 11))
-    clus_coeff_aad = np.zeros((7, 11))
+    degree_aad = np.zeros((7, 10))
+    wt_degree_aad = np.zeros((7, 10))
+    clus_coeff_aad = np.zeros((7, 10))
 
-    aad_global = np.zeros((7, 11))
-    aad_neighbourhood = np.zeros((7, 11))
-    aad_local = np.zeros((7, 11))
+    aad_global = np.zeros((7, 10))
+    aad_neighbourhood = np.zeros((7, 10))
+    aad_local = np.zeros((7, 10))
 
     for idx, method in enumerate(methods):
         aads_global_loop = defaultdict(list)
@@ -85,7 +85,7 @@ if __name__ == "__main__":
         gbl = []
         ll = []
         nl = []
-        for jdx, rank in enumerate(xrange(10, 21)):
+        for jdx, rank in enumerate(xrange(20, 30)):
             for itr in xrange(1, 6):
                 fname = '%s-%s-%s-nodeRoles.txt' % (rank, itr, method)
                 fname = os.path.join(input_folder, fname)
@@ -138,8 +138,6 @@ if __name__ == "__main__":
                     random_sense_n = get_node_sense_matrix(E_ran_n, E_n_ones)
 
                     for j, label in enumerate(global_measurement_labels):
-                        # if idx == 1 and jdx >= 8:
-                        #     break
                         label_measurement = node_sense_g[:, j]
                         random_label_measurement = random_sense_g[:, j]
                         aad = np.mean(np.abs(label_measurement - random_label_measurement))

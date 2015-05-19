@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     sparsity_threshold = 2.0
     for i in xrange(1, 6):
-        for rank in xrange(5, 14 + 1):
+        for rank in xrange(20, 29 + 1):
             snmf = nimfa.Snmf(actual_fx_matrix, seed="random_vcol", version='r', rank=rank, beta=2.0)
             snmf_fit = snmf()
             G = np.asarray(snmf_fit.basis())
