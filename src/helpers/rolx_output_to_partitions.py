@@ -31,10 +31,13 @@ for line in open(node_role_file):
 
     if all_zeros > 0.0:
         node_role.append(sorted(nr, key=lambda x: x[0], reverse=True)[0][1])
-        # # node_role_secondary = sorted(nr, key=lambda x: x[0], reverse=True)[1]
-        # # secondary_role_val = node_role_secondary[0]
-        # # if secondary_role_val > 0.0:
-        # #     node_role.append(node_role_secondary[1])
+        # node_role_secondary = sorted(nr, key=lambda x: x[0], reverse=True)
+        # if len(node_role_secondary) > 1:
+        #     secondary_role_val = node_role_secondary[1][0]
+        #     if secondary_role_val > 0.0:
+        #         node_role.append(node_role_secondary[1][1])
+        #     else:
+        #         node_role.append(-1)
         # else:
         #     node_role.append(-1)
     else:
@@ -53,4 +56,6 @@ for key in sorted(partition.keys()):
         fw.write('%s ' % node)
     fw.write('\n')
 
+if len(partition) < 2:
+    print len(partition), node_role_file
 fw.close()
