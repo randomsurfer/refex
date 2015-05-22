@@ -52,7 +52,7 @@ def load_partition(graph, file_name, epsilon=-1):
                 node = int(node)
                 adj_list = graph.neighbors(node)
                 if len(adj_list) <= epsilon:  # discard EEP based trivial partition
-                    break
+                    continue
                 else:
                     partition[i].append(node)
     return partition
@@ -74,6 +74,7 @@ if __name__ == "__main__":
     argument_parser.add_argument('-p1', '--partition-one', help='partition file P1', required=True)
     argument_parser.add_argument('-p2', '--partition-two', help='partition file P2', required=True)
     argument_parser.add_argument('-of', '--output-file', help='output file', required=True)
+    argument_parser.add_argument('-ep', '--epsilon', help='if applicable', required=True)
 
     args = argument_parser.parse_args()
 
@@ -82,9 +83,10 @@ if __name__ == "__main__":
     partition_t1 = args.partition_one
     partition_t2 = args.partition_two
     output_file = args.output_file
-    epsilon = -1
+    epsilon = int(args.epsilon)
 
     print 'G1: ', graph_t1
+    print 'Method: ', output_file
 
     g1 = load_graph(graph_t1)
     g2 = load_graph(graph_t2)
