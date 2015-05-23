@@ -157,6 +157,51 @@ class Features:
             self.graph.node[vertex]['xea-'+attr+level_id] = self.graph.node[vertex]['xesa-'+attr+level_id] + \
                                                             self.graph.node[vertex]['xeda-'+attr+level_id]
 
+    def simple_base_egonet_primitive_features(self, vertex, level_id='0'):
+        """
+            * Counts several egonet properties. In particular:
+            *
+            * wn - Within Node - # of nodes in egonet
+            * weu - Within Edge Unique - # of unique edges with both ends in egonet
+            * wet - Within Edge Total - total # of internal edges
+            * xesu - eXternal Edge Source Unique - # of unique edges exiting egonet
+            * xest - eXternal Edge Source Total - total # of edges exiting egonet
+            * xedu - eXternal Edge Destination Unique - # of unique edges entering egonet
+            * xedt - eXternal Edge Destination Total - total # of edges entering egonet
+            *
+            * and three counts per attribute,
+            *
+            * wea-ATTRNAME  - Within Edge Attribute - sum of attribute for internal edges
+            * xea-ATTRNAME  - sum of xeda and xesa
+            * xesa-ATTRNAME - eXternal Edge Source Attribute - sum of attr for exiting edges
+            * xeda-ATTRNAME - eXternal Edge Destination Attribute - sum of attr for entering edges
+            *
+        :return: side effecting code, adds the features in the networkx DiGraph dict
+        """
+        self.graph.node[vertex]['wn'+level_id] = 0.0
+        self.graph.node[vertex]['weu'+level_id] = 0.0
+        self.graph.node[vertex]['wet'+level_id] = 0.0
+        self.graph.node[vertex]['xedu'+level_id] = 0.0
+        self.graph.node[vertex]['xedt'+level_id] = 0.0
+
+        if level_id == '0':
+            egonet = self.vertex_egonets[vertex][0]
+        else:
+            egonet = self.vertex_egonets[vertex][1]
+
+        for n1 in egonet:
+            neighbours = self.graph.successors(n1)
+
+            self.graph.node[vertex]['wn'+level_id] += 1.0
+
+            for n2 in neighbours:
+                if n2 in egonet:
+                    self.graph.node[vertex]['weu'+level_id] += 1.0
+                    self.graph.node[vertex]['wet'+level_id] += len(self.graph.predecessors(n2))
+                else:
+                    self.graph.node[vertex]['xedu'+level_id] += 1.0
+                    self.graph.node[vertex]['xedt'+level_id] += len(self.graph.predecessors(n2))
+
     def init_rider_features(self, vertex, fx_name_base, attrs=['wgt']):
         self.graph.node[vertex]['wd-'+fx_name_base] = 0.0  # destination
         self.graph.node[vertex]['ws-'+fx_name_base] = 0.0  # source
@@ -745,6 +790,29 @@ class Features:
         fx_names = self.get_current_fx_names()
         self.compute_log_binned_features(fx_names)
 
+    def simple_primitive_features(self):
+        # computes the primitive local features
+        # computes the rider based features if rider_fx is True
+        # updates in place the primitive feature values with their log binned values
+
+        for n1 in self.graph.nodes():
+            if n1 not in self.vertex_egonets:
+                vertex_lvl_0_egonet = self.get_egonet_members(n1)
+                vertex_lvl_1_egonet = self.get_egonet_members(n1, level=1)
+                self.vertex_egonets[n1] = [vertex_lvl_0_egonet, vertex_lvl_1_egonet]
+
+            self.simple_base_egonet_primitive_features(n1, level_id='0')
+            self.simple_base_egonet_primitive_features(n1, level_id='1')
+
+        print 'Computed Simple Primitive Features'
+
+        self.no_of_vertices = self.graph.number_of_nodes()
+        self.init_log_binned_fx_buckets()
+
+        fx_names = self.get_current_fx_names()
+        self.compute_log_binned_features(fx_names)
+
+
     def update_feature_matrix_to_graph(self, feature_matrix):
         # input is the structured numpy array, update these features to the graph nodes
         graph_nodes = sorted(self.graph.nodes())
@@ -804,8 +872,8 @@ class Features:
         mean_fx = '-m'
         vertex_lvl_0_egonet = self.vertex_egonets[vertex][0]
         vertex_lvl_0_egonet_size = float(len(vertex_lvl_0_egonet))
-        vertex_lvl_1_egonet = self.vertex_egonets[vertex][1]
-        vertex_lvl_1_egonet_size = float(len(vertex_lvl_1_egonet))
+        # vertex_lvl_1_egonet = self.vertex_egonets[vertex][1]
+        # vertex_lvl_1_egonet_size = float(len(vertex_lvl_1_egonet))
 
         fx_list = [fx_name for fx_name in sorted(self.graph.node[vertex].keys())
                    if fx_name not in self.memo_recursive_fx_names]
