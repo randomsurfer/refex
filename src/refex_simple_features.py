@@ -1,5 +1,227 @@
-import features
 import argparse
+import networkx as nx
+import numpy as np
+from multiprocessing import Pool
+
+
+graph = nx.Graph()
+p = 0.5
+s = 0
+TOLERANCE = 0.0001
+MAX_ITERATIONS = 5
+refex_log_binned_buckets = []
+vertex_egonets = {}
+memo_recursive_fx_names = {}
+iter_no = 0
+
+
+def load_graph(file_name):
+    for line in open(file_name):
+        line = line.strip()
+        line = line.split(',')
+        source = int(line[0])
+        dest = int(line[1])
+        graph.add_edge(source, dest)
+
+
+def get_egonet_members(vertex, level=0):
+    lvl_zero_egonet = graph.neighbors(vertex)
+    lvl_zero_egonet.append(vertex)
+    if level == 1:
+        lvl_one_egonet = []
+        for node in lvl_zero_egonet:
+            if node != vertex:
+                lvl_one_egonet.extend(graph.neighbors(node))
+        lvl_zero_egonet.extend(lvl_one_egonet)
+    return list(set(lvl_zero_egonet))
+
+
+def simple_node_features(vertex):
+    if vertex not in vertex_egonets:
+        vertex_lvl_0_egonet = get_egonet_members(vertex)
+        vertex_lvl_1_egonet = get_egonet_members(vertex, level=1)
+        vertex_egonets[vertex] = [vertex_lvl_0_egonet, vertex_lvl_1_egonet]
+
+    simple_base_egonet_primitive_features(vertex, level_id='0')
+    simple_base_egonet_primitive_features(vertex, level_id='1')
+
+
+def simple_base_egonet_primitive_features(vertex, level_id='0'):
+    graph.node[vertex]['wn'+level_id] = 0.0
+    graph.node[vertex]['weu'+level_id] = 0.0
+    graph.node[vertex]['wet'+level_id] = 0.0
+    graph.node[vertex]['xedu'+level_id] = 0.0
+    graph.node[vertex]['xedt'+level_id] = 0.0
+
+    if level_id == '0':
+        egonet = vertex_egonets[vertex][0]
+    else:
+        egonet = vertex_egonets[vertex][1]
+
+    for n1 in egonet:
+        neighbours = graph.neighbors(n1)
+
+        graph.node[vertex]['wn'+level_id] += 1.0
+
+        for n2 in neighbours:
+            if n2 in egonet:
+                graph.node[vertex]['weu'+level_id] += 1.0
+                graph.node[vertex]['wet'+level_id] += len(graph.neighbors(n2))
+            else:
+                graph.node[vertex]['xedu'+level_id] += 1.0
+                graph.node[vertex]['xedt'+level_id] += len(graph.neighbors(n2))
+
+
+def init_log_binned_fx_buckets():
+    no_of_vertices = graph.number_of_nodes()
+
+    max_fx_value = np.ceil(np.log2(no_of_vertices) + TOLERANCE)  # fixing value of p = 0.5,
+    log_binned_fx_keys = [value for value in xrange(0, int(max_fx_value))]
+
+    fx_bucket_size = []
+    starting_bucket_size = no_of_vertices
+
+    for idx in np.arange(0.0, max_fx_value):
+        starting_bucket_size *= p
+        fx_bucket_size.append(int(np.ceil(starting_bucket_size)))
+
+    total_slots_in_all_buckets = sum(fx_bucket_size)
+    if total_slots_in_all_buckets > no_of_vertices:
+        fx_bucket_size[0] -= (total_slots_in_all_buckets - no_of_vertices)
+
+    log_binned_buckets_dict = dict(zip(log_binned_fx_keys, fx_bucket_size))
+
+    for binned_value in sorted(log_binned_buckets_dict.keys()):
+        for count in xrange(0, log_binned_buckets_dict[binned_value]):
+            refex_log_binned_buckets.append(binned_value)
+
+    if len(refex_log_binned_buckets) != no_of_vertices:
+        raise Exception("Vertical binned bucket size not equal to the number of vertices!")
+
+
+def get_sorted_feature_values(feature_values):
+    sorted_fx_values = sorted(feature_values, key=lambda x: x[1])
+    return sorted_fx_values, len(sorted_fx_values)
+
+
+def vertical_bin(feature):
+    vertical_binned_vertex = {}
+    count_of_vertices_with_log_binned_fx_value_assigned = 0
+    fx_value_of_last_vertex_assigned_to_bin = -1
+    previous_binned_value = 0
+
+    sorted_fx_values, sorted_fx_size = get_sorted_feature_values(feature)
+
+    for vertex, value in sorted_fx_values:
+        current_binned_value = refex_log_binned_buckets[count_of_vertices_with_log_binned_fx_value_assigned]
+
+        # If there are ties, it may be necessary to include more than p|V| nodes
+        if current_binned_value != previous_binned_value and value == fx_value_of_last_vertex_assigned_to_bin:
+            vertical_binned_vertex[vertex] = previous_binned_value
+        else:
+            vertical_binned_vertex[vertex] = current_binned_value
+            previous_binned_value = current_binned_value
+
+        count_of_vertices_with_log_binned_fx_value_assigned += 1
+        fx_value_of_last_vertex_assigned_to_bin = value
+
+    return vertical_binned_vertex
+
+
+def get_current_fx_names():
+    return [attr for attr in sorted(graph.node[graph.nodes()[0]])]
+
+
+def compute_log_binned_features(fx_list):
+    graph_nodes = sorted(graph.nodes())
+    for feature in fx_list:
+        node_fx_values = []
+        for n in graph_nodes:
+            node_fx_values.append(tuple([n, graph.node[n][feature]]))
+
+        vertical_binned_vertices = vertical_bin(node_fx_values)
+        for vertex in vertical_binned_vertices.keys():
+            binned_value = vertical_binned_vertices[vertex]
+            graph.node[vertex][feature] = float(binned_value)
+
+
+def simple_primitive_features():
+    graph_nodes = graph.nodes()
+
+    pool = Pool(16)
+    pool.map(simple_node_features, graph_nodes)
+
+    print 'Computed Simple Primitive Features'
+
+    init_log_binned_fx_buckets()
+
+    fx_names = get_current_fx_names()
+    compute_log_binned_features(fx_names)
+
+
+def update_feature_matrix_to_graph(feature_matrix):
+    graph_nodes = sorted(graph.nodes())
+    for node in graph_nodes:
+        graph.node[node] = {}
+    feature_names = list(feature_matrix.dtype.names)
+    for feature in feature_names:
+        values = feature_matrix[feature].tolist()
+        for i, node in enumerate(graph_nodes):
+            graph.node[node][feature] = values[i]
+
+
+def compute_recursive_egonet_features(vertex):
+    sum_fx = '-s'
+    mean_fx = '-m'
+    vertex_lvl_0_egonet = vertex_egonets[vertex][0]
+    vertex_lvl_0_egonet_size = float(len(vertex_lvl_0_egonet))
+
+    fx_list = [fx_name for fx_name in sorted(graph.node[vertex].keys())
+               if fx_name not in memo_recursive_fx_names]
+
+    level_id = '0'
+    for fx_name in fx_list:
+        fx_value = 0.0
+        for node in vertex_lvl_0_egonet:
+            fx_value += graph.node[node][fx_name]
+
+        s_fx_name = fx_name + '-' + str(iter_no) + sum_fx + level_id
+        m_fx_name = fx_name + '-' + str(iter_no) + mean_fx + level_id
+
+        graph.node[vertex][s_fx_name] = fx_value
+        graph.node[vertex][m_fx_name] = float(fx_value) / vertex_lvl_0_egonet_size
+
+
+def compute_recursive_features():
+    print 'Number of features: ', len(graph.node[2].keys())
+
+    graph_nodes = graph.nodes()
+    prev_fx_names = set(get_current_fx_names())
+
+    pool = Pool(16)
+    pool.map(compute_recursive_egonet_features, graph_nodes)
+
+    new_fx_names = list(set(get_current_fx_names()) - prev_fx_names)
+
+    # compute and replace the new feature values with their log binned values
+    compute_log_binned_features(new_fx_names)
+
+
+def save_feature_matrix(out_file_name):
+    graph_nodes = sorted(graph.nodes())
+    feature_names = list(sorted(graph.node[graph_nodes[0]].keys()))
+    ff = open('feature-names-out.txt', 'w')
+    for feature in feature_names:
+        ff.write('%s,' % feature)
+    ff.close()
+
+    fo = open(out_file_name, 'w')
+    for node in graph_nodes:
+        fo.write('%s' % node)
+        for feature in feature_names:
+            fo.write(',%s' % graph.node[node][feature])
+        fo.write('\n')
+
 
 if __name__ == "__main__":
     argument_parser = argparse.ArgumentParser(prog='run_recursive_feature_extraction')
@@ -13,62 +235,26 @@ if __name__ == "__main__":
     graph_file = args.graph
     max_diff = args.max_diff
 
-    fx = features.Features()
-
-    fx.MAX_ITERATIONS = int(args.iterations)
+    MAX_ITERATIONS = int(args.iterations)
 
     # load input graph
-    fx.load_graph(graph_file)
+    load_graph(graph_file)
+    print 'Graph Loaded'
 
     # compute simple primitive features
-    fx.simple_primitive_features()
-    fx.save_feature_matrix("primitives.txt")
-    print 'Written Intermediate Fx to file'
-
-    # compute initial feature matrix
-    primitive_feature_matrix = fx.create_initial_feature_matrix()
-
-    # prune any redundant primitive/rider features
-    prev_pruned_fx_matrix = fx.compare_and_prune_vertex_fx_vectors(prev_feature_vector=None,
-                                                                   new_feature_vector=primitive_feature_matrix,
-                                                                   max_dist=max_diff)
-
-    prev_pruned_fx_size = len(list(prev_pruned_fx_matrix.dtype.names))
-
-    fx.update_feature_matrix_to_graph(prev_pruned_fx_matrix)
-
-    current_pruned_fx_size = 0
-    print 'Initial number of features: %s' % prev_pruned_fx_size
+    simple_primitive_features()
+    print 'Computed Primitive Features'
 
     no_iterations = 0
 
-    while no_iterations <= fx.MAX_ITERATIONS:
+    while no_iterations <= MAX_ITERATIONS:
         # compute and prune recursive features for iteration #no_iterations
-        current_iteration_pruned_fx_matrix = fx.compute_recursive_features(prev_fx_matrix=prev_pruned_fx_matrix,
-                                                                           iter_no=no_iterations, max_dist=max_diff)
+        current_fx = len(get_current_fx_names())
+        compute_recursive_features()
+        new_fx = len(get_current_fx_names())
 
-        if current_iteration_pruned_fx_matrix is None:
-            print 'No new features added, all pruned. Exiting!'
-            break
-
-        current_pruned_fx_size = len(list(current_iteration_pruned_fx_matrix.dtype.names))
-
-        print 'Iteration: %s, Number of Features: %s' % (no_iterations, current_pruned_fx_size)
-
-        if current_pruned_fx_size == prev_pruned_fx_size:
-            print 'No new features added, Exiting!'
-            break
-
-        # update the latest feature matrix to the graph
-        fx.update_feature_matrix_to_graph(current_iteration_pruned_fx_matrix)
-
-        # update the previous iteration feature matrix with the latest one
-        prev_pruned_fx_matrix = current_iteration_pruned_fx_matrix
-        prev_pruned_fx_size = current_pruned_fx_size
-
-        # increment feature similarity threshold by 1
-        max_diff += 1
-
+        print 'Prev Fx: %s, Current Fx: %s, Iter: %s' % (current_fx, new_fx, iter_no)
+        iter_no += 1
         no_iterations += 1
 
-    fx.save_feature_matrix("featureValues.csv")
+    save_feature_matrix("featureValues.csv")
