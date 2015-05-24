@@ -2,6 +2,7 @@ import argparse
 import networkx as nx
 import numpy as np
 from multiprocessing import Pool
+from collections import defaultdict
 
 
 graph = nx.Graph()
@@ -21,6 +22,8 @@ def load_graph(file_name):
         line = line.split(',')
         source = int(line[0])
         dest = int(line[1])
+        if source == 7657:
+            print dest
         graph.add_edge(source, dest)
 
 
@@ -36,40 +39,29 @@ def get_egonet_members(vertex, level=0):
     return list(set(lvl_zero_egonet))
 
 
-def simple_node_features(vertex):
-    if vertex not in vertex_egonets:
-        vertex_lvl_0_egonet = get_egonet_members(vertex)
-        vertex_lvl_1_egonet = get_egonet_members(vertex, level=1)
-        vertex_egonets[vertex] = [vertex_lvl_0_egonet, vertex_lvl_1_egonet]
-
-    simple_base_egonet_primitive_features(vertex, level_id='0')
-    simple_base_egonet_primitive_features(vertex, level_id='1')
-
-
 def simple_base_egonet_primitive_features(vertex, level_id='0'):
-    graph.node[vertex]['wn'+level_id] = 0.0
-    graph.node[vertex]['weu'+level_id] = 0.0
-    graph.node[vertex]['wet'+level_id] = 0.0
-    graph.node[vertex]['xedu'+level_id] = 0.0
-    graph.node[vertex]['xedt'+level_id] = 0.0
+    props = (vertex, {})
+    props[1]['wn'+level_id] = 0.0
+    props[1]['weu'+level_id] = 0.0
+    props[1]['wet'+level_id] = 0.0
+    props[1]['xedu'+level_id] = 0.0
+    props[1]['xedt'+level_id] = 0.0
 
-    if level_id == '0':
-        egonet = vertex_egonets[vertex][0]
-    else:
-        egonet = vertex_egonets[vertex][1]
+    egonet = get_egonet_members(vertex)
 
     for n1 in egonet:
         neighbours = graph.neighbors(n1)
 
-        graph.node[vertex]['wn'+level_id] += 1.0
+        props[1]['wn'+level_id] += 1.0
 
         for n2 in neighbours:
             if n2 in egonet:
-                graph.node[vertex]['weu'+level_id] += 1.0
-                graph.node[vertex]['wet'+level_id] += len(graph.neighbors(n2))
+                props[1]['weu'+level_id] += 1.0
+                props[1]['wet'+level_id] += len(graph.neighbors(n2))
             else:
-                graph.node[vertex]['xedu'+level_id] += 1.0
-                graph.node[vertex]['xedt'+level_id] += len(graph.neighbors(n2))
+                props[1]['xedu'+level_id] += 1.0
+                props[1]['xedt'+level_id] += len(graph.neighbors(n2))
+    return props
 
 
 def init_log_binned_fx_buckets():
@@ -145,29 +137,8 @@ def compute_log_binned_features(fx_list):
             graph.node[vertex][feature] = float(binned_value)
 
 
-def simple_primitive_features():
-    graph_nodes = graph.nodes()
-
-    pool = Pool(16)
-    pool.map(simple_node_features, graph_nodes)
-
-    print 'Computed Simple Primitive Features'
-
-    init_log_binned_fx_buckets()
-
-    fx_names = get_current_fx_names()
-    compute_log_binned_features(fx_names)
-
-
-def update_feature_matrix_to_graph(feature_matrix):
-    graph_nodes = sorted(graph.nodes())
-    for node in graph_nodes:
-        graph.node[node] = {}
-    feature_names = list(feature_matrix.dtype.names)
-    for feature in feature_names:
-        values = feature_matrix[feature].tolist()
-        for i, node in enumerate(graph_nodes):
-            graph.node[node][feature] = values[i]
+def simple_node_features(vertex):
+    return simple_base_egonet_primitive_features(vertex, level_id='0')
 
 
 def compute_recursive_egonet_features(vertex):
@@ -192,13 +163,13 @@ def compute_recursive_egonet_features(vertex):
         graph.node[vertex][m_fx_name] = float(fx_value) / vertex_lvl_0_egonet_size
 
 
-def compute_recursive_features():
-    print 'Number of features: ', len(graph.node[2].keys())
+def compute_recursive_features(fx_list):
+    print 'Number of features: ', len(graph.node[0].keys())
 
     graph_nodes = graph.nodes()
     prev_fx_names = set(get_current_fx_names())
 
-    pool = Pool(16)
+    pool = Pool(8)
     pool.map(compute_recursive_egonet_features, graph_nodes)
 
     new_fx_names = list(set(get_current_fx_names()) - prev_fx_names)
@@ -223,38 +194,61 @@ def save_feature_matrix(out_file_name):
         fo.write('\n')
 
 
-if __name__ == "__main__":
-    argument_parser = argparse.ArgumentParser(prog='run_recursive_feature_extraction')
-    argument_parser.add_argument('-g', '--graph', help='input graph file', required=True)
-    argument_parser.add_argument('-i', '--iterations', help='number of refex iterations', required=True)
-    argument_parser.add_argument('-s', '--max-diff', help='start value of feature similarity threshold (default=0)',
-                                 default=0, type=int)
+argument_parser = argparse.ArgumentParser(prog='run_recursive_feature_extraction')
+argument_parser.add_argument('-g', '--graph', help='input graph file', required=True)
+argument_parser.add_argument('-i', '--iterations', help='number of refex iterations', required=True)
+argument_parser.add_argument('-s', '--max-diff', help='start value of feature similarity threshold (default=0)',
+                             default=0, type=int)
 
-    args = argument_parser.parse_args()
+args = argument_parser.parse_args()
 
-    graph_file = args.graph
-    max_diff = args.max_diff
+graph_file = args.graph
+max_diff = args.max_diff
 
-    MAX_ITERATIONS = int(args.iterations)
+MAX_ITERATIONS = int(args.iterations)
 
-    # load input graph
-    load_graph(graph_file)
-    print 'Graph Loaded'
+# load input graph
+load_graph(graph_file)
+print 'Graph Loaded'
 
-    # compute simple primitive features
-    simple_primitive_features()
-    print 'Computed Primitive Features'
+print graph
+# compute simple primitive features
+graph_nodes = graph.nodes()
 
-    no_iterations = 0
+pool = Pool(8)
+result = pool.map(simple_node_features, graph_nodes)
 
-    while no_iterations <= MAX_ITERATIONS:
-        # compute and prune recursive features for iteration #no_iterations
-        current_fx = len(get_current_fx_names())
-        compute_recursive_features()
-        new_fx = len(get_current_fx_names())
+for n, fx in result:
+    graph.node[n].update(fx)
 
-        print 'Prev Fx: %s, Current Fx: %s, Iter: %s' % (current_fx, new_fx, iter_no)
-        iter_no += 1
-        no_iterations += 1
+fx_names = get_current_fx_names()
 
-    save_feature_matrix("featureValues.csv")
+print 'Computed Simple Primitive Features'
+
+init_log_binned_fx_buckets()
+
+fx_names = get_current_fx_names()
+
+compute_log_binned_features(fx_names)
+
+print 'Computed Primitive Features:', len(fx_names)
+import sys
+sys.exit(0)
+
+
+
+no_iterations = 0
+
+while no_iterations <= MAX_ITERATIONS:
+    # compute and prune recursive features for iteration #no_iterations
+    current_fx = len(get_current_fx_names())
+
+
+    abc = compute_recursive_egonet_features()
+    new_fx = len(get_current_fx_names())
+
+    print 'Prev Fx: %s, Current Fx: %s, Iter: %s' % (current_fx, new_fx, iter_no)
+    iter_no += 1
+    no_iterations += 1
+
+save_feature_matrix("featureValues.csv")
