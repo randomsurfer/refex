@@ -114,7 +114,7 @@ if __name__ == "__main__":
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
     sparsity_threshold = 1.0
-    for rank in xrange(1, max_roles + 1):
+    for rank in xrange(2, max_roles + 1):
         lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
         lsnmf_fit = lsnmf()
         G = np.asarray(lsnmf_fit.basis())

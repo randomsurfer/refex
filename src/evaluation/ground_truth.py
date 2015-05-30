@@ -97,8 +97,7 @@ if __name__ == "__main__":
     hamming_loss /= D
     precision /= D
     recall /= D
-    f1 = 2 * (precision * recall) / (precision + recall)
 
-    print 'HammingLoss\t%.2f\tPrecision\t%.2f\tRecall\t%.2f\tF1\t%.2f' % (hamming_loss * 100.0, precision * 100.0,
-                                                                          recall * 100.0, f1 * 100.0)
+    print 'HammingLoss\t%.2f\tPrecision\t%.2f\tRecall\t%.2f' % (hamming_loss * 100.0, precision * 100.0,
+                                                                recall * 100.0)
 
