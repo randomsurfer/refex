@@ -54,7 +54,7 @@ if __name__ == "__main__":
     node_measurement_file = args.node_measurement
     node_measurements = np.loadtxt(node_measurement_file, delimiter=',')
 
-    methods = ['corex', 'corex_s', 'corex_r', 'riders', 'rolx', 'sparse', 'diverse']
+    methods = ['corex', 'corex_r', 'corex_s', 'riders', 'rolx', 'sparse', 'diverse']
     methods_id = {'corex': 'corex', 'corex_s': 'corex', 'corex_r': 'corex',
                   'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
 
@@ -67,7 +67,9 @@ if __name__ == "__main__":
                               'Degree', 'Wt. Degree', 'Clustering Coeff']
 
     method_measurement_aad = np.zeros((7, 10))
+    method_measurement_aad_std = np.zeros((7, 10))
     method_measurement_msd = np.zeros((7, 10))
+    method_stds = {}
 
     for idx, method in enumerate(methods):
         print 'Method: ', method
@@ -82,7 +84,10 @@ if __name__ == "__main__":
         try:
             n, r = node_roles.shape
         except ValueError:
-            r = 1
+            nnr = np.zeros((n, 2))
+            nnr[:, 0] = node_roles
+            node_roles = nnr
+            n, r = node_roles.shape
         print 'Nodes: %s, Roles: %s' % (n, r)
 
         node_ids = np.loadtxt(fname_id)
@@ -107,7 +112,7 @@ if __name__ == "__main__":
         node_sense = get_node_sense_matrix(E, E_ones)
         print 'Node Sense Shape: ', node_sense.shape
 
-        for i in xrange(50):
+        for i in xrange(150):
             random_role_assignment = normalize(get_random_role_assignment(node_measurements.shape[0],
                                                                           r, 1000 + i))
             E_ran = np.asarray(estimate_basis(normalized_measurements, random_role_assignment))
@@ -120,14 +125,32 @@ if __name__ == "__main__":
                 msd = np.mean(np.square(label_measurement - random_label_measurement))
                 method_measurement_aad[idx][j] += aad
                 method_measurement_msd[idx][j] += msd
+                if method not in method_stds:
+                    method_stds[method] = {}
+                    if label not in method_stds[method]:
+                        method_stds[method][label] = []
+                        method_stds[method][label].append(aad)
+                    else:
+                        method_stds[method][label].append(aad)
+                else:
+                    if label not in method_stds[method]:
+                        method_stds[method][label] = []
+                        method_stds[method][label].append(aad)
+                    else:
+                        method_stds[method][label].append(aad)
 
         print '*********************'
 
-    method_measurement_msd /= 50.0
-    method_measurement_aad /= 50.0
+    method_measurement_msd /= 150.0
+    method_measurement_aad /= 150.0
 
     np.savetxt('methods_aad.txt', method_measurement_aad)
-    np.savetxt('methods_msd.txt', method_measurement_msd)
+    # np.savetxt('methods_msd.txt', method_measurement_msd)
+
+    for i, method in enumerate(methods):
+        for j, label in enumerate(all_measurement_labels):
+            method_measurement_aad_std[i][j] = np.std(method_stds[method][label])
+    np.savetxt('methods_aad_std.txt', method_measurement_aad_std)
 
     # print method_measurement_aad
     # print method_measurement_msd

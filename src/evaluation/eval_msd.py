@@ -54,29 +54,37 @@ if __name__ == "__main__":
     node_measurement_file = args.node_measurement
     node_measurements = np.loadtxt(node_measurement_file, delimiter=',')
 
-    methods = ['corex', 'corex_s', 'corex_r', 'riders', 'rolx', 'sparse', 'diverse']
+    methods = ['corex', 'corex_r', 'corex_s',  'riders', 'rolx', 'sparse', 'diverse']
     methods_id = {'corex': 'corex', 'corex_s': 'corex', 'corex_r': 'corex',
                   'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
-    global_measurement_labels = ['Betweenness', 'Closeness', '#BCC']
+    global_measurement_labels = ['Betweenness', 'Closeness'] #, '#BCC']
     neighborhood_measurement_labels = ['Ego_0_Deg', 'Ego_1_Deg', 'Ego_0_Wt', 'Ego_1_Wt']
     local_measurement_labels = ['Degree', 'Wt. Degree', 'Clustering Coeff']
 
     between_aad = np.zeros((7, 10))
+    between_aad_std = np.zeros((7, 10))
     closeness_aad = np.zeros((7, 10))
+    closeness_aad_std = np.zeros((7, 10))
     bcc_aad = np.zeros((7, 10))
 
     ego_zero_deg_aad = np.zeros((7, 10))
     ego_zero_wt_aad = np.zeros((7, 10))
     ego_one_deg_aad = np.zeros((7, 10))
+    ego_one_deg_aad_std = np.zeros((7, 10))
     ego_one_wt_aad = np.zeros((7, 10))
+    ego_one_wt_aad_std = np.zeros((7, 10))
 
     degree_aad = np.zeros((7, 10))
     wt_degree_aad = np.zeros((7, 10))
     clus_coeff_aad = np.zeros((7, 10))
+    clus_coeff_aad_std = np.zeros((7, 10))
 
     aad_global = np.zeros((7, 10))
+    # aad_global_std = np.zeros((7, 10))
     aad_neighbourhood = np.zeros((7, 10))
+    # aad_neighbourhood_std = np.zeros((7, 10))
     aad_local = np.zeros((7, 10))
+    # aad_local_std = np.zeros((7, 10))
 
     for idx, method in enumerate(methods):
         aads_global_loop = defaultdict(list)
@@ -106,7 +114,7 @@ if __name__ == "__main__":
                 aligned_node_measurements = np.asarray(aligned_node_measurements)
                 normalized_measurements = normalize(aligned_node_measurements, norm='l2', axis=0)
 
-                global_measurements = normalized_measurements[:, 0:3]
+                global_measurements = normalized_measurements[:, 0:2]
                 neighborhood_measurements = normalized_measurements[:, 3:7]
                 local_measurements = normalized_measurements[:, 7:]
 
@@ -125,7 +133,7 @@ if __name__ == "__main__":
                 node_sense_n = get_node_sense_matrix(E_n, E_n_ones)
                 node_sense_l = get_node_sense_matrix(E_l, E_l_ones)
 
-                for i in xrange(30):
+                for i in xrange(50):
                     random_role_assignment = normalize(get_random_role_assignment(node_measurements.shape[0],
                                                                                   rank, 1000 + i))
 
@@ -159,33 +167,50 @@ if __name__ == "__main__":
                         ll.append(aad)
 
             aad_global[idx][jdx] = np.mean(gbl)
+            # aad_global_std[idx][jdx] = np.std(gbl)
             print idx, jdx, np.mean(gbl)
             aad_neighbourhood[idx][jdx] = np.mean(nl)
+            # aad_neighbourhood_std[idx][jdx] = np.std(nl)
             aad_local[idx][jdx] = np.mean(ll)
+            # aad_local_std[idx][jdx] = np.std(ll)
             between_aad[idx][jdx] = np.mean(aads_global_loop['Betweenness'])
+            between_aad_std[idx][jdx] = np.std(aads_global_loop['Betweenness'])
             closeness_aad[idx][jdx] = np.mean(aads_global_loop['Closeness'])
-            bcc_aad[idx][jdx] = np.mean(aads_global_loop['#BCC'])
+            closeness_aad_std[idx][jdx] = np.std(aads_global_loop['Closeness'])
+            # bcc_aad[idx][jdx] = np.mean(aads_global_loop['#BCC'])
             ego_zero_deg_aad[idx][jdx] = np.mean(aads_neighbours_loop['Ego_0_Deg'])
             ego_one_deg_aad[idx][jdx] = np.mean(aads_neighbours_loop['Ego_1_Deg'])
-            ego_zero_wt_aad[idx][jdx] =  np.mean(aads_neighbours_loop['Ego_0_Wt'])
-            ego_one_wt_aad[idx][jdx] =  np.mean(aads_neighbours_loop['Ego_1_Wt'])
+            ego_one_deg_aad_std[idx][jdx] = np.std(aads_neighbours_loop['Ego_1_Deg'])
+            ego_zero_wt_aad[idx][jdx] = np.mean(aads_neighbours_loop['Ego_0_Wt'])
+            ego_one_wt_aad[idx][jdx] = np.mean(aads_neighbours_loop['Ego_1_Wt'])
+            ego_one_wt_aad_std[idx][jdx] = np.std(aads_neighbours_loop['Ego_1_Wt'])
             degree_aad[idx][jdx] = np.mean(aads_local_loop['Degree'])
             wt_degree_aad[idx][jdx] = np.mean(aads_local_loop['Wt. Degree'])
             clus_coeff_aad[idx][jdx] = np.mean(aads_local_loop['Clustering Coeff'])
+            clus_coeff_aad_std[idx][jdx] = np.mean(aads_local_loop['Clustering Coeff'])
 
     np.savetxt('aad_global.txt', aad_global)
+    # np.savetxt('aad_global_std.txt', aad_global_std)
     np.savetxt('aad_neighbourhood.txt', aad_neighbourhood)
+    # np.savetxt('aad_neighbourhood_std.txt', aad_neighbourhood_std)
     np.savetxt('aad_local.txt', aad_local)
-    # np.savetxt('msd_between.txt', between_aad)
-    # np.savetxt('msd_closeness.txt', closeness_aad)
+    # np.savetxt('aad_local_std.txt', aad_local_std)
+    np.savetxt('aad_between.txt', between_aad)
+    np.savetxt('aad_between_std.txt', between_aad_std)
+    np.savetxt('aad_closeness.txt', closeness_aad)
+    np.savetxt('aad_closeness_std.txt', closeness_aad_std)
     # np.savetxt('msd_bcc.txt', bcc_aad)
     # np.savetxt('msd_ego_0_deg.txt', ego_zero_deg_aad)
-    # np.savetxt('msd_ego_1_deg.txt', ego_one_deg_aad)
+    np.savetxt('aad_ego_1_deg.txt', ego_one_deg_aad)
+    np.savetxt('aad_ego_1_deg_std.txt', ego_one_deg_aad_std)
     # np.savetxt('msd_ego_0_wt.txt', ego_zero_wt_aad)
-    # np.savetxt('msd_ego_1_wt.txt', ego_one_wt_aad)
+    np.savetxt('aad_ego_1_wt.txt', ego_one_wt_aad)
+    np.savetxt('aad_ego_1_wt_std.txt', ego_one_wt_aad_std)
     # np.savetxt('msd_degree.txt', degree_aad)
     # np.savetxt('msd_wt_degree.txt', wt_degree_aad)
-    # np.savetxt('msd_clus_coeff.txt', clus_coeff_aad)
+    np.savetxt('aad_clus_coeff.txt', clus_coeff_aad)
+    np.savetxt('aad_clus_coeff.txt', clus_coeff_aad_std)
+
 
     # from pandas import *
     # # import pylab

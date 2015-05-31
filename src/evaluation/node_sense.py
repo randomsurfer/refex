@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     node_id_seq = np.loadtxt(id_file)
     node_roles = np.loadtxt(nr_file)[:, 0:5]
-    random_node_roles = get_random_role_assignment(node_id_seq.shape[0], 5, 101)
+    random_node_roles = get_random_role_assignment(node_id_seq.shape[0], 26, 101)[:, 0:5]
     node_measurements = np.loadtxt(measurements_file, delimiter=',')
 
     # Node-Measurement matrix has node_id in the first column
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     E_ones = estimate_basis(normalized_measurements, G_ones)
 
     measurement_labels = ['Betweenness', 'Closeness', '#BCC', 'Degree', 'Wt. Degree', 'Clustering Coeff']
-    # print '\t'.join(measurement_labels)
+
     E = np.asarray(E)
     E_ran = np.asarray(E_ran)
     E_ones = np.asarray(E_ones)
@@ -100,7 +100,9 @@ if __name__ == '__main__':
         for s in xrange(E.shape[1]):
             a = E[r][s] / E_ones[0][s]
             b = E_ran[r][s] / E_ones[0][s]
-            m.append(np.abs(a-b))
+            m.append(np.abs(a))
+            # m.append(np.abs(b))
+            # m.append(np.abs(a-b))
         all_values.append(m)
 
     all_values = np.asarray(all_values)
@@ -133,7 +135,6 @@ if __name__ == '__main__':
     ax.tick_params(axis='x', length=50, which='major', direction='out', top='off', labelsize=24)
     ax.set_ylabel('NodeSense Scores', size=18)
     #plt.title(r'CoR$\varepsilon$X-R Absolute Deviations from Baseline NodeSense on ICDM Co-Authorship Network, Year 2005-2009', size=16)
-    # plt.title('Baseline NodeSense on ICDM Co-Authorship Network, Year 2005-2009', size=16)
 
-    # plt.legend(loc=1, ncol=3)
+    plt.legend(loc=1, ncol=3)
     plt.show()
