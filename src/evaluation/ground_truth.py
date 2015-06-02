@@ -12,6 +12,7 @@ def read_roles_ssn(ground_truth_file):
         for rol in rols:
             rol = rol.strip()
             roles[node_id].append(rol)
+        roles[node_id] = set(roles[node_id])
     return roles
 
 
@@ -44,6 +45,7 @@ if __name__ == "__main__":
     node_role = np.loadtxt(nr_file)
     ids = np.loadtxt(ids_file)
     ground_node_roles = read_roles_imdb(gt_file)
+    # ground_node_roles = read_roles_ssn(gt_file)
 
     node_role[node_role <= 0.0] = 0.0
     id_seq = [i for i in ids]
@@ -98,6 +100,6 @@ if __name__ == "__main__":
     precision /= D
     recall /= D
 
-    print 'HammingLoss\t%.2f\tPrecision\t%.2f\tRecall\t%.2f' % (hamming_loss * 100.0, precision * 100.0,
+    print 'HammingLoss\t%.2f\tPrecision\t%.2f\tRecall\t%.2f' % (hamming_loss, precision * 100.0,
                                                                 recall * 100.0)
 

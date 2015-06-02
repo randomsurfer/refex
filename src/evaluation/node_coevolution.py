@@ -121,8 +121,11 @@ if __name__ == "__main__":
     bcc_diff = []
     ew0_diff = []
     ed0_diff = []
+    ew1_diff = []
+    ed1_diff = []
     clusc_diff = []
     degree_diff = []
+    wdegree_diff = []
 
     for a in primary_node_pairs.keys():
         a_t = []
@@ -140,6 +143,12 @@ if __name__ == "__main__":
         edeg0_at = normed_full_measure_matrix_one[a][labels['ed0']]
         edeg0_atdt = normed_full_measure_matrix_two[a][labels['ed0']]
 
+        ew1_at = normed_full_measure_matrix_one[a][labels['ew1']]
+        ew1_atdt = normed_full_measure_matrix_two[a][labels['ew1']]
+
+        edeg1_at = normed_full_measure_matrix_one[a][labels['ed1']]
+        edeg1_atdt = normed_full_measure_matrix_two[a][labels['ed1']]
+
         clus_at = normed_full_measure_matrix_one[a][labels['clusc']]
         clus_atdt = normed_full_measure_matrix_two[a][labels['clusc']]
 
@@ -148,6 +157,9 @@ if __name__ == "__main__":
 
         deg_at = normed_full_measure_matrix_one[a][labels['deg']]
         deg_atdt = normed_full_measure_matrix_two[a][labels['deg']]
+
+        wdeg_at = normed_full_measure_matrix_one[a][labels['wdeg']]
+        wdeg_atdt = normed_full_measure_matrix_two[a][labels['wdeg']]
 
         for b in primary_node_pairs[a]:
             b_t = []
@@ -168,21 +180,34 @@ if __name__ == "__main__":
             edeg0_bt = normed_full_measure_matrix_one[b][labels['ed0']]
             edeg0_btdt = normed_full_measure_matrix_two[b][labels['ed0']]
 
+            ew1_bt = normed_full_measure_matrix_one[b][labels['ew1']]
+            ew1_btdt = normed_full_measure_matrix_two[b][labels['ew1']]
+
+            edeg1_bt = normed_full_measure_matrix_one[b][labels['ed1']]
+            edeg1_btdt = normed_full_measure_matrix_two[b][labels['ed1']]
+
             clus_bt =  normed_full_measure_matrix_one[b][labels['clusc']]
             clus_btdt = normed_full_measure_matrix_two[b][labels['clusc']]
 
             deg_bt = normed_full_measure_matrix_one[b][labels['deg']]
             deg_btdt = normed_full_measure_matrix_two[b][labels['deg']]
 
+            wdeg_bt = normed_full_measure_matrix_one[b][labels['wdeg']]
+            wdeg_btdt = normed_full_measure_matrix_two[b][labels['wdeg']]
+
             bet_diff.append(get_diff(between_at, between_atdt, between_bt, between_btdt))
             closeness_diff.append(get_diff(close_at, close_atdt, close_bt, close_btdt))
             bcc_diff.append(get_diff(bcc_at, bcc_atdt, bcc_bt, bcc_btdt))
 
             ew0_diff.append(get_diff(ew0_at, ew0_atdt, ew0_bt, ew0_btdt))
+            ew1_diff.append(get_diff(ew1_at, ew1_atdt, ew1_bt, ew1_btdt))
             ed0_diff.append(get_diff(edeg0_at, edeg0_atdt, edeg0_bt, edeg0_btdt))
+            ed1_diff.append(get_diff(edeg1_at, edeg1_atdt, edeg1_bt, edeg1_btdt))
 
             clusc_diff.append(get_diff(clus_at, clus_atdt, clus_bt, clus_btdt))
             degree_diff.append(get_diff(deg_at, deg_atdt, deg_bt, deg_btdt))
+            wdegree_diff.append(get_diff(wdeg_at, wdeg_atdt, wdeg_bt, wdeg_btdt))
 
-    final_diff = [bet_diff, bcc_diff, ew0_diff, ed0_diff, clusc_diff, closeness_diff, degree_diff]
+    final_diff = [bet_diff, closeness_diff, bcc_diff, ed0_diff, ed1_diff, ew0_diff,
+                  ew1_diff, degree_diff, wdegree_diff, clusc_diff]
     np.savetxt(out_file, np.asarray(final_diff))
