@@ -5,6 +5,7 @@ import argparse
 import numpy as np
 import scipy.optimize as opt
 from sklearn.preprocessing import normalize
+from scipy.stats import powerlaw as pl
 import os
 
 
@@ -28,6 +29,20 @@ def get_random_role_assignment(num_nodes, num_roles, seed=1000):
     for node in xrange(num_nodes):
         role = random.randint(0, num_roles - 1)
         random_role_assignment[node][role] = value
+    return random_role_assignment
+
+
+def get_powerlaw_random_role_assignment(num_nodes, num_roles, alpha=3.0, seed=1000):
+    random_role_assignment = np.zeros((num_nodes, num_roles))
+    np.random.seed(seed=seed)
+    simulated_data = pl.rvs(alpha, size=num_nodes)
+    hist, bins = np.histogram(simulated_data, bins=num_roles-1)
+    default_value = 1.0
+    test = []
+    roles = np.digitize(simulated_data, bins)
+    for node, role in zip(xrange(num_nodes), roles):
+        test.append(role)
+        random_role_assignment[node][role - 1] = default_value
     return random_role_assignment
 
 
@@ -112,9 +127,11 @@ if __name__ == "__main__":
         node_sense = get_node_sense_matrix(E, E_ones)
         print 'Node Sense Shape: ', node_sense.shape
 
-        for i in xrange(150):
-            random_role_assignment = normalize(get_random_role_assignment(node_measurements.shape[0],
-                                                                          r, 1000 + i))
+        for i in xrange(500):
+            # random_role_assignment = normalize(get_random_role_assignment(node_measurements.shape[0],
+            #                                                               r, 1000 + i))
+            random_role_assignment = normalize(get_powerlaw_random_role_assignment(node_measurements.shape[0],
+                                                                                   r, seed=1000+i))
             E_ran = np.asarray(estimate_basis(normalized_measurements, random_role_assignment))
             random_sense = get_node_sense_matrix(E_ran, E_ones)
 
@@ -141,35 +158,12 @@ if __name__ == "__main__":
 
         print '*********************'
 
-    method_measurement_msd /= 150.0
-    method_measurement_aad /= 150.0
+    method_measurement_msd /= 500.0
+    method_measurement_aad /= 500.0
 
     np.savetxt('methods_aad.txt', method_measurement_aad)
-    # np.savetxt('methods_msd.txt', method_measurement_msd)
 
     for i, method in enumerate(methods):
         for j, label in enumerate(all_measurement_labels):
             method_measurement_aad_std[i][j] = np.std(method_stds[method][label])
     np.savetxt('methods_aad_std.txt', method_measurement_aad_std)
-
-    # print method_measurement_aad
-    # print method_measurement_msd
-    #
-    # from pandas import *
-    # import pylab
-    # from matplotlib import pyplot as plt
-    #
-    # df = pandas.DataFrame(method_measurement_aad, columns=[name for name in all_measurement_labels])
-    #
-    # vals = np.around(df.values, 2)
-    # normal = plt.normalize(vals.min() + 0.2, vals.max() + 0.2)
-    #
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, xticks=[], yticks=[])
-    #
-    # the_table=plt.table(cellText=vals, rowLabels=methods, colLabels=df.columns,
-    #                     colWidths = [0.03]*vals.shape[1], loc='center',
-    #                     cellColours=plt.cm.RdYlGn(normal(vals)))
-    #
-    # plt.show()
-    # # pylab.savefig('colorscaletest.pdf', bbox_inches=0)

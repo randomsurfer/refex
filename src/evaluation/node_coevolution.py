@@ -64,7 +64,17 @@ if __name__ == "__main__":
 
     node_ids = np.loadtxt(id1_file)
 
-    n, m = node_roles.shape
+    node_roles[node_roles <= 0.0] = 0.0
+
+    try:
+        n, m = node_roles.shape
+    except ValueError:
+        n = node_roles.shape[0]
+        nnr = np.zeros((n, 2))
+        nnr[:, 0] = node_roles
+        node_roles = nnr
+        n, m = node_roles.shape
+
     node_roles_with_id = np.zeros((n, m+1))
 
     node_roles_with_id[:, 0] = node_ids
