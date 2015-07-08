@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import brewer2mpl
 from sklearn.preprocessing import normalize
 from matplotlib import rcParams
-
+from scipy.stats import powerlaw as pl
 
 def estimate_coeff(measurements, basis):
     coeff = np.zeros((measurements.shape[0], basis.shape[0]))
@@ -26,10 +26,24 @@ def get_random_role_assignment(num_nodes, num_roles, seed=1000):
     random_role_assignment = np.zeros((num_nodes, num_roles))
     import random
     random.seed(seed)
-    value = 1.0# / num_nodes
+    value = 1.0
     for node in xrange(num_nodes):
         role = random.randint(0, num_roles - 1)
         random_role_assignment[node][role] = value
+    return random_role_assignment
+
+
+def get_powerlaw_random_role_assignment(num_nodes, num_roles, alpha=3.0, seed=1000):
+    random_role_assignment = np.zeros((num_nodes, num_roles))
+    np.random.seed(seed=seed)
+    simulated_data = pl.rvs(alpha, size=num_nodes)
+    hist, bins = np.histogram(simulated_data, bins=num_roles-1)
+    default_value = 1.0
+    test = []
+    roles = np.digitize(simulated_data, bins)
+    for node, role in zip(xrange(num_nodes), roles):
+        test.append(role)
+        random_role_assignment[node][role - 1] = default_value
     return random_role_assignment
 
 
@@ -60,7 +74,8 @@ if __name__ == '__main__':
 
     node_id_seq = np.loadtxt(id_file)
     node_roles = np.loadtxt(nr_file)[:, 0:5]
-    random_node_roles = get_random_role_assignment(node_id_seq.shape[0], 26, 101)[:, 0:5]
+    # random_node_roles = get_random_role_assignment(node_id_seq.shape[0], 26, 101)[:, 0:5]
+    random_node_roles = get_powerlaw_random_role_assignment(node_id_seq.shape[0], 5)#[:, 0:5]
     node_measurements = np.loadtxt(measurements_file, delimiter=',')
 
     # Node-Measurement matrix has node_id in the first column
@@ -100,8 +115,8 @@ if __name__ == '__main__':
         for s in xrange(E.shape[1]):
             a = E[r][s] / E_ones[0][s]
             b = E_ran[r][s] / E_ones[0][s]
-            m.append(np.abs(a))
-            # m.append(np.abs(b))
+            # m.append(np.abs(a))
+            m.append(np.abs(b))
             # m.append(np.abs(a-b))
         all_values.append(m)
 

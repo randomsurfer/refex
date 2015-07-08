@@ -44,8 +44,8 @@ if __name__ == "__main__":
 
     node_role = np.loadtxt(nr_file)
     ids = np.loadtxt(ids_file)
-    ground_node_roles = read_roles_imdb(gt_file)
-    # ground_node_roles = read_roles_ssn(gt_file)
+    # ground_node_roles = read_roles_imdb(gt_file)
+    ground_node_roles = read_roles_ssn(gt_file)
 
     node_role[node_role <= 0.0] = 0.0
     id_seq = [i for i in ids]
@@ -69,12 +69,15 @@ if __name__ == "__main__":
 
     predicted_node_roles = defaultdict(list)
 
+    avg_labels = []
+
     for role in predicted_roles.keys():
         role_list = []
         if len(predicted_roles[role]) > 0:
             for node_id in predicted_roles[role]:
                 role_list.extend(ground_node_roles[node_id])
             role_list = set(role_list)
+            avg_labels.append(len(role_list))
 
             for node_id in predicted_roles[role]:
                 predicted_node_roles[node_id] = role_list
@@ -99,7 +102,9 @@ if __name__ == "__main__":
     hamming_loss /= D
     precision /= D
     recall /= D
+    num_roles = len(role_means.keys())
+    print len(avg_labels)
 
-    print 'HammingLoss\t%.2f\tPrecision\t%.2f\tRecall\t%.2f' % (hamming_loss, precision * 100.0,
-                                                                recall * 100.0)
+    print 'HammingLoss\t%.2f\tPrecision\t%.2f\t\#R\t%s\tAvgLabels\t%s' % (hamming_loss, precision * 100.0, num_roles,
+                                                                          np.mean(avg_labels))
 
