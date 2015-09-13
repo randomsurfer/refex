@@ -33,10 +33,11 @@ F(i)(.) - denotes the i^th row vector of F.
 
 
 if __name__ == "__main__":
-    argument_parser = argparse.ArgumentParser(prog='compute glrd')
+    np.random.seed(1000)
+    argument_parser = argparse.ArgumentParser(prog='compute right sparsity')
     argument_parser.add_argument('-nf', '--node-feature', help='node-feature matrix file', required=True)
-    argument_parser.add_argument('-o', '--output-prefix', help='glrd output prefix', required=True)
-    argument_parser.add_argument('-od', '--output-dir', help='glrd output dir', required=True)
+    argument_parser.add_argument('-o', '--output-prefix', help='output prefix', required=True)
+    argument_parser.add_argument('-od', '--output-dir', help='output dir', required=True)
 
     args = argument_parser.parse_args()
 

@@ -7,6 +7,7 @@ from collections import defaultdict
 
 
 if __name__ == "__main__":
+    np.random.seed(1004)
     argument_parser = argparse.ArgumentParser(prog='compute riders matrix')
     argument_parser.add_argument('-g', '--graph', help='input graph file', required=True)
     argument_parser.add_argument('-b', '--bins', help='bins for rider features', required=True)

@@ -64,7 +64,7 @@ def merge_features(rider_fx, refex_fx, prune=False):
 
 
 if __name__ == "__main__":
-    argument_parser = argparse.ArgumentParser(prog='compute coridex')
+    argument_parser = argparse.ArgumentParser(prog='compute corex')
     argument_parser.add_argument('-g', '--graph', help='input graph file', required=True)
     argument_parser.add_argument('-b', '--bins', help='bins for rider features', required=True)
     argument_parser.add_argument('-rd', '--rider-dir', help='rider directory', required=True)

@@ -9,6 +9,7 @@ from collections import defaultdict
 import mdl
 
 if __name__ == "__main__":
+    np.random.seed(1003)
     argument_parser = argparse.ArgumentParser(prog='compute coridex')
     argument_parser.add_argument('-rx', '--refex-features', help='refex feature file', required=True)
     argument_parser.add_argument('-od', '--output-dir', help='final output dir', required=True)

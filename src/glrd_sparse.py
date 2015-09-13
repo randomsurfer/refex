@@ -85,6 +85,7 @@ def glrd_sparse(V, G, F, r, err_V, err_F):
 
 
 if __name__ == "__main__":
+    np.random.seed(1001)
     argument_parser = argparse.ArgumentParser(prog='compute glrd')
     argument_parser.add_argument('-nf', '--node-feature', help='node-feature matrix file', required=True)
     argument_parser.add_argument('-o', '--output-prefix', help='glrd output prefix', required=True)

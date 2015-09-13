@@ -87,6 +87,7 @@ def glrd_diverse(V, G, F, r, err_V, err_F):
 
 
 if __name__ == "__main__":
+    np.random.seed(1002)
     argument_parser = argparse.ArgumentParser(prog='compute glrd with diversity constraints')
     argument_parser.add_argument('-nf', '--node-feature', help='node-feature matrix file', required=True)
     argument_parser.add_argument('-o', '--output-prefix', help='glrd output prefix', required=True)
@@ -116,7 +117,7 @@ if __name__ == "__main__":
     min_des_not_changed_counter = 0
     diversity_threshold = 0.25 # fixing it to 0.25
 
-    for rank in xrange(1, max_roles + 1):
+    for rank in xrange(2, max_roles + 1):
         lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
         lsnmf_fit = lsnmf()
         G = np.asarray(lsnmf_fit.basis())
