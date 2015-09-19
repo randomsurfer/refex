@@ -34,15 +34,21 @@ F(i)(.) - denotes the i^th row vector of F.
 '''
 
 
+def get_residual(G, F, k):
+    m, n = G.shape
+    p, q = F.shape
+    if n != p:
+        raise ValueError('Incorrect dimensions for Matrix Factorization')
+    R = np.zeros((m, q))
+    for idx in xrange(k-1):
+        R += np.outer(G[:, idx], F[idx, :])
+    return R
+
+
 def glrd_diverse(V, G, F, r, err_V, err_F):
     # diversity threshold is 0.5
     for k in xrange(r):
-        G_copy = np.copy(G)  # create local copies for excluding the k^th col and row of G and F resp.
-        F_copy = np.copy(F)
-        G_copy[:, k] = 0.0
-        F_copy[k, :] = 0.0
-
-        R = V - np.dot(G_copy, F_copy)  # compute residual
+        R = V - get_residual(G, F, k)  # compute residual
 
         # Solve for optimal G(.)(k) with diversity constraints
         F_k = F[k, :]
@@ -115,7 +121,7 @@ if __name__ == "__main__":
     mdlo = mdl.MDL(number_bins)
     minimum_description_length = 1e20
     min_des_not_changed_counter = 0
-    diversity_threshold = 0.25 # fixing it to 0.25
+    diversity_threshold = 0.5 # fixing it to 0.5
 
     for rank in xrange(2, max_roles + 1):
         lsnmf = nimfa.Lsnmf(actual_fx_matrix, rank=rank, max_iter=100)
