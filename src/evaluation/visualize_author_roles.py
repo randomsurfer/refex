@@ -41,15 +41,24 @@ def get_primary_role(node_id, node_role):
     return primary_role
 
 
+def load_name_mapping(_file):
+    names = {}
+    for line in open(_file):
+        line = line.strip().split('\t')
+        names[line[0]] = int(line[1])
+    return names
+
+
 if __name__ == '__main__':
-    # argument_parser = argparse.ArgumentParser(prog='Author Visuals')
-    # argument_parser.add_argument('-id', '--author_id', help='author node id', required=True)
+    argument_parser = argparse.ArgumentParser(prog='Author Visuals')
+    argument_parser.add_argument('-n', '--author_name', help='author name', required=True)
+    argument_parser.add_argument('-nw', '--network', help='author name', required=True)
     # argument_parser.add_argument('-m', '--method', help='role discovery method', required=True)
     #
-    # args = argument_parser.parse_args()
-    #
-    # a_id = int(args.author_id)
-    # method = args.method
+    args = argument_parser.parse_args()
+
+    author_name = args.author_name
+    network = args.network
 
     # conf_ids = ['CIKM', 'ICDM', 'KDD', 'SDM', 'SIGMOD', 'VLDB']
     # nw = '_05_10'
@@ -58,19 +67,26 @@ if __name__ == '__main__':
     # method_node_ids = {'riders_s': 'riders', 'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
     final_values = np.zeros((6, 6))
 
-    m_cikm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/properties_05_10/measurements.txt', delimiter=',')
-    m_icdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/ICDM/properties_05_10/measurements.txt', delimiter=',')
-    m_kdd = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/KDD/properties_05_10/measurements.txt', delimiter=',')
-    m_sdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SDM/properties_05_10/measurements.txt', delimiter=',')
-    m_sigmod = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/properties_05_10/measurements.txt', delimiter=',')
-    m_vldb = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/properties_05_10/measurements.txt', delimiter=',')
+    names_cikm = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/CIKM%s_Graph_mapping.txt' % (network))
+    names_icdm = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/ICDM/ICDM%s_Graph_mapping.txt' % (network))
+    names_kdd = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/KDD/KDD%s_Graph_mapping.txt' % (network))
+    names_sdm = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SDM/SDM%s_Graph_mapping.txt' % (network))
+    names_sigmod = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/SIGMOD%s_Graph_mapping.txt' % (network))
+    names_vldb = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/VLDB%s_Graph_mapping.txt' % (network))
 
-    nr_cikm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/riders_05_10/out-CIKM_05_10-nodeRoles.txt')
-    nr_icdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/ICDM/riders_05_10/out-ICDM_05_10-nodeRoles.txt')
-    nr_kdd = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/KDD/riders_05_10/out-KDD_05_10-nodeRoles.txt')
-    nr_sdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SDM/riders_05_10/out-SDM_05_10-nodeRoles.txt')
-    nr_sigmod = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/riders_05_10/out-SIGMOD_05_10-nodeRoles.txt')
-    nr_vldb = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/riders_05_10/out-VLDB_05_10-nodeRoles.txt')
+    m_cikm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/properties%s/measurements.txt' % (network), delimiter=',')
+    m_icdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/ICDM/properties%s/measurements.txt' % (network), delimiter=',')
+    m_kdd = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/KDD/properties%s/measurements.txt' % (network), delimiter=',')
+    m_sdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SDM/properties%s/measurements.txt' % (network), delimiter=',')
+    m_sigmod = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/properties%s/measurements.txt' % (network), delimiter=',')
+    m_vldb = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/properties%s/measurements.txt' % (network), delimiter=',')
+
+    nr_cikm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/riders%s/out-CIKM%s-nodeRoles.txt' % (network, network))
+    nr_icdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/ICDM/riders%s/out-ICDM%s-nodeRoles.txt' % (network, network))
+    nr_kdd = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/KDD/riders%s/out-KDD%s-nodeRoles.txt' % (network, network))
+    nr_sdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SDM/riders%s/out-SDM%s-nodeRoles.txt' % (network, network))
+    nr_sigmod = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/riders%s/out-SIGMOD%s-nodeRoles.txt' % (network, network))
+    nr_vldb = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/riders%s/out-VLDB%s-nodeRoles.txt' % (network, network))
 
 
     all_measurement_labels = ['Betweenness', 'Closeness', '#BCC',
@@ -109,7 +125,7 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(729, nr_cikm)
+    primary_role_idx = get_primary_role(names_cikm[author_name], nr_cikm)
 
     final_values[0, :] = all_values[primary_role_idx, :]
 
@@ -143,7 +159,7 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(271, nr_icdm)
+    primary_role_idx = get_primary_role(names_icdm[author_name], nr_icdm)
 
     final_values[1, :] = all_values[primary_role_idx, :]
 
@@ -176,7 +192,7 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(13, nr_kdd)
+    primary_role_idx = get_primary_role(names_kdd[author_name], nr_kdd)
 
     final_values[2, :] = all_values[primary_role_idx, :]
 
@@ -209,7 +225,7 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(25, nr_sdm)
+    primary_role_idx = get_primary_role(names_sdm[author_name], nr_sdm)
 
     final_values[3, :] = all_values[primary_role_idx, :]
 
@@ -242,7 +258,7 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(109, nr_sigmod)
+    primary_role_idx = get_primary_role(names_sigmod[author_name], nr_sigmod)
 
     final_values[4, :] = all_values[primary_role_idx, :]
 
@@ -275,7 +291,7 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(73, nr_vldb)
+    primary_role_idx = get_primary_role(names_vldb[author_name], nr_vldb)
 
     final_values[5, :] = all_values[primary_role_idx, :]
 
@@ -306,7 +322,7 @@ if __name__ == '__main__':
     ax.set_xticklabels(['CIKM', 'ICDM', 'KDD', 'SDM', 'SIGMOD', 'VLDB'], rotation=20, ha='left')
     ax.tick_params(axis='x', length=50, which='major', direction='out', top='off', labelsize=20)
     ax.set_ylabel('Normalized Role Measurement Scores', size=18)
-    plt.title(r'Jiawei Han', size=22)
+    plt.title(r'%s' % author_name, size=22)
     #plt.title(r'CoR$\varepsilon$X-R Absolute Deviations from Baseline NodeSense on ICDM Co-Authorship Network, Year 2005-2009', size=16)
 
     plt.legend(loc=1, ncol=3)
