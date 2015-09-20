@@ -75,7 +75,7 @@ if __name__ == '__main__':
     node_id_seq = np.loadtxt(id_file)
     node_roles = np.loadtxt(nr_file)[:, 0:5]
     # random_node_roles = get_random_role_assignment(node_id_seq.shape[0], 26, 101)[:, 0:5]
-    random_node_roles = get_powerlaw_random_role_assignment(node_id_seq.shape[0], 5)#[:, 0:5]
+    random_node_roles = get_powerlaw_random_role_assignment(node_id_seq.shape[0], 26)[:, 0:5]
     node_measurements = np.loadtxt(measurements_file, delimiter=',')
 
     # Node-Measurement matrix has node_id in the first column

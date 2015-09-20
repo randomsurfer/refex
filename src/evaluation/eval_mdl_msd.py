@@ -69,8 +69,8 @@ if __name__ == "__main__":
     node_measurement_file = args.node_measurement
     node_measurements = np.loadtxt(node_measurement_file, delimiter=',')
 
-    methods = ['corex', 'corex_r', 'corex_s', 'riders', 'rolx', 'sparse', 'diverse']
-    methods_id = {'corex': 'corex', 'corex_s': 'corex', 'corex_r': 'corex',
+    methods = ['riders_r', 'riders_s', 'riders', 'rolx', 'sparse', 'diverse']
+    methods_id = {'corex': 'corex', 'riders_s': 'riders', 'riders_r': 'riders',
                   'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
 
     global_measurement_labels = ['Betweenness', 'Closeness', '#BCC']
@@ -81,9 +81,9 @@ if __name__ == "__main__":
                               'Ego_0_Deg', 'Ego_1_Deg', 'Ego_0_Wt', 'Ego_1_Wt',
                               'Degree', 'Wt. Degree', 'Clustering Coeff']
 
-    method_measurement_aad = np.zeros((7, 10))
-    method_measurement_aad_std = np.zeros((7, 10))
-    method_measurement_msd = np.zeros((7, 10))
+    method_measurement_aad = np.zeros((6, 10))
+    method_measurement_aad_std = np.zeros((6, 10))
+    method_measurement_msd = np.zeros((6, 10))
     method_stds = {}
 
     for idx, method in enumerate(methods):
