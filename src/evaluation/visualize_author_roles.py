@@ -34,11 +34,16 @@ def get_node_sense_matrix(E, E_ones):
     return np.asarray(node_sense_matrix)
 
 
-def get_primary_role(node_id, node_role):
-    row = node_role[node_id, :]
-    reversed_sorted_indices = row.argsort()[-2:][::-1]
-    primary_role = reversed_sorted_indices[0]
-    return primary_role
+def get_primary_role(node_id, node_role, node_seq):
+    row = None
+    for c, n in enumerate(node_seq):
+        if n == node_id:
+            row = node_role[c, :]
+            break
+    if row is not None:
+        reversed_sorted_indices = row.argsort()[-2:][::-1]
+        primary_role = reversed_sorted_indices[0]
+        return primary_role
 
 
 def load_name_mapping(_file):
@@ -53,18 +58,19 @@ if __name__ == '__main__':
     argument_parser = argparse.ArgumentParser(prog='Author Visuals')
     argument_parser.add_argument('-n', '--author_name', help='author name', required=True)
     argument_parser.add_argument('-nw', '--network', help='author name', required=True)
-    # argument_parser.add_argument('-m', '--method', help='role discovery method', required=True)
+    argument_parser.add_argument('-m', '--method', help='role discovery method', required=True)
     #
     args = argument_parser.parse_args()
 
     author_name = args.author_name
     network = args.network
+    method = args.method
 
     # conf_ids = ['CIKM', 'ICDM', 'KDD', 'SDM', 'SIGMOD', 'VLDB']
     # nw = '_05_10'
     #
     #
-    # method_node_ids = {'riders_s': 'riders', 'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
+    method_node_ids = {'riders_s': 'riders', 'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
     final_values = np.zeros((6, 6))
 
     names_cikm = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/CIKM%s_Graph_mapping.txt' % (network))
@@ -74,6 +80,13 @@ if __name__ == '__main__':
     names_sigmod = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/SIGMOD%s_Graph_mapping.txt' % (network))
     names_vldb = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/VLDB%s_Graph_mapping.txt' % (network))
 
+    id_cikm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/%s%s/out-CIKM%s-ids.txt' % (method_node_ids[method], network, network))
+    id_icdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/ICDM/%s%s/out-ICDM%s-ids.txt' % (method_node_ids[method], network, network))
+    id_kdd = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/KDD/%s%s/out-KDD%s-ids.txt' % (method_node_ids[method], network, network))
+    id_sdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SDM/%s%s/out-SDM%s-ids.txt' % (method_node_ids[method], network, network))
+    id_sigmod = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/%s%s/out-SIGMOD%s-ids.txt' % (method_node_ids[method], network, network))
+    id_vldb = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/%s%s/out-VLDB%s-ids.txt' % (method_node_ids[method], network, network))
+
     m_cikm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/properties%s/measurements.txt' % (network), delimiter=',')
     m_icdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/ICDM/properties%s/measurements.txt' % (network), delimiter=',')
     m_kdd = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/KDD/properties%s/measurements.txt' % (network), delimiter=',')
@@ -81,12 +94,12 @@ if __name__ == '__main__':
     m_sigmod = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/properties%s/measurements.txt' % (network), delimiter=',')
     m_vldb = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/properties%s/measurements.txt' % (network), delimiter=',')
 
-    nr_cikm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/riders%s/out-CIKM%s-nodeRoles.txt' % (network, network))
-    nr_icdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/ICDM/riders%s/out-ICDM%s-nodeRoles.txt' % (network, network))
-    nr_kdd = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/KDD/riders%s/out-KDD%s-nodeRoles.txt' % (network, network))
-    nr_sdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SDM/riders%s/out-SDM%s-nodeRoles.txt' % (network, network))
-    nr_sigmod = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/riders%s/out-SIGMOD%s-nodeRoles.txt' % (network, network))
-    nr_vldb = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/riders%s/out-VLDB%s-nodeRoles.txt' % (network, network))
+    nr_cikm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/%s%s/out-CIKM%s-nodeRoles.txt' % (method, network, network))
+    nr_icdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/ICDM/%s%s/out-ICDM%s-nodeRoles.txt' % (method, network, network))
+    nr_kdd = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/KDD/%s%s/out-KDD%s-nodeRoles.txt' % (method, network, network))
+    nr_sdm = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SDM/%s%s/out-SDM%s-nodeRoles.txt' % (method, network, network))
+    nr_sigmod = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/SIGMOD/%s%s/out-SIGMOD%s-nodeRoles.txt' % (method, network, network))
+    nr_vldb = np.loadtxt('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/VLDB/%s%s/out-VLDB%s-nodeRoles.txt' % (method, network, network))
 
 
     all_measurement_labels = ['Betweenness', 'Closeness', '#BCC',
@@ -98,7 +111,7 @@ if __name__ == '__main__':
     measurement_labels = ['Betweenness', 'Closeness', '#BCC', 'Degree', 'Wt. Degree', 'Clustering Coeff']
 
     cikm = []
-    for node_id in xrange(m_cikm.shape[0]):
+    for node_id in id_cikm:
         cikm.append(m_cikm[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -125,14 +138,14 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_cikm[author_name], nr_cikm)
+    primary_role_idx = get_primary_role(names_cikm[author_name], nr_cikm, id_cikm)
 
     final_values[0, :] = all_values[primary_role_idx, :]
 
 
     ### ICDM
     icdm = []
-    for node_id in xrange(m_icdm.shape[0]):
+    for node_id in id_icdm:
         icdm.append(m_icdm[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -159,13 +172,13 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_icdm[author_name], nr_icdm)
+    primary_role_idx = get_primary_role(names_icdm[author_name], nr_icdm, id_icdm)
 
     final_values[1, :] = all_values[primary_role_idx, :]
 
     ### KDD
     kdd = []
-    for node_id in xrange(m_kdd.shape[0]):
+    for node_id in id_kdd:
         kdd.append(m_kdd[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -192,13 +205,13 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_kdd[author_name], nr_kdd)
+    primary_role_idx = get_primary_role(names_kdd[author_name], nr_kdd, id_kdd)
 
     final_values[2, :] = all_values[primary_role_idx, :]
 
     ### SDM
     sdm = []
-    for node_id in xrange(m_sdm.shape[0]):
+    for node_id in id_sdm:
         sdm.append(m_sdm[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -225,13 +238,13 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_sdm[author_name], nr_sdm)
+    primary_role_idx = get_primary_role(names_sdm[author_name], nr_sdm, id_sdm)
 
     final_values[3, :] = all_values[primary_role_idx, :]
 
     ### SIGMOD
     sigmod = []
-    for node_id in xrange(m_sigmod.shape[0]):
+    for node_id in id_sigmod:
         sigmod.append(m_sigmod[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -258,13 +271,13 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_sigmod[author_name], nr_sigmod)
+    primary_role_idx = get_primary_role(names_sigmod[author_name], nr_sigmod, id_sigmod)
 
     final_values[4, :] = all_values[primary_role_idx, :]
 
     ### VLDB
     vldb = []
-    for node_id in xrange(m_vldb.shape[0]):
+    for node_id in id_vldb:
         vldb.append(m_vldb[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -291,7 +304,7 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_vldb[author_name], nr_vldb)
+    primary_role_idx = get_primary_role(names_vldb[author_name], nr_vldb, id_vldb)
 
     final_values[5, :] = all_values[primary_role_idx, :]
 
