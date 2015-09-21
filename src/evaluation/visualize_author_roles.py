@@ -46,6 +46,16 @@ def get_primary_role(node_id, node_role, node_seq):
         return primary_role
 
 
+def get_primary_role_for_all(node_role, node_seq):
+    primary_node_role = {}
+    for idx, node_id in enumerate(node_seq):
+        row = node_role[idx, :]
+        reversed_sorted_indices = row.argsort()[-2:][::-1]
+        primary_role = reversed_sorted_indices[0]
+        primary_node_role[node_id] = primary_role
+    return primary_node_role
+
+
 def load_name_mapping(_file):
     names = {}
     for line in open(_file):
@@ -111,7 +121,9 @@ if __name__ == '__main__':
     measurement_labels = ['Betweenness', 'Closeness', '#BCC', 'Degree', 'Wt. Degree', 'Clustering Coeff']
 
     cikm = []
-    for node_id in id_cikm:
+    cikm_node_mapping = {}
+    for i, node_id in enumerate(id_cikm):
+        cikm_node_mapping[node_id] = i
         cikm.append(m_cikm[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -138,14 +150,18 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_cikm[author_name], nr_cikm, id_cikm)
+    # primary_role_idx = get_primary_role(names_cikm[author_name], nr_cikm, id_cikm)
+    primary_roles_cikm = get_primary_role_for_all(nr_cikm, id_cikm)
+    primary_role_idx = primary_roles_cikm[names_cikm[author_name]]
 
     final_values[0, :] = all_values[primary_role_idx, :]
 
 
     ### ICDM
     icdm = []
-    for node_id in id_icdm:
+    icdm_node_mapping = {}
+    for i, node_id in enumerate(id_icdm):
+        icdm_node_mapping[node_id] = i
         icdm.append(m_icdm[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -172,13 +188,17 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_icdm[author_name], nr_icdm, id_icdm)
+    # primary_role_idx = get_primary_role(names_icdm[author_name], nr_icdm, id_icdm)
+    primary_roles_icdm = get_primary_role_for_all(nr_icdm, id_icdm)
+    primary_role_idx = primary_roles_icdm[names_icdm[author_name]]
 
     final_values[1, :] = all_values[primary_role_idx, :]
 
     ### KDD
     kdd = []
-    for node_id in id_kdd:
+    kdd_node_mapping = {}
+    for i, node_id in enumerate(id_kdd):
+        kdd_node_mapping[node_id] = i
         kdd.append(m_kdd[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -205,13 +225,17 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_kdd[author_name], nr_kdd, id_kdd)
+    # primary_role_idx = get_primary_role(names_kdd[author_name], nr_kdd, id_kdd)
+    primary_roles_kdd = get_primary_role_for_all(nr_kdd, id_kdd)
+    primary_role_idx = primary_roles_kdd[names_kdd[author_name]]
 
     final_values[2, :] = all_values[primary_role_idx, :]
 
     ### SDM
     sdm = []
-    for node_id in id_sdm:
+    sdm_node_mapping = {}
+    for i, node_id in enumerate(id_sdm):
+        sdm_node_mapping[node_id] = i
         sdm.append(m_sdm[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -238,13 +262,17 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_sdm[author_name], nr_sdm, id_sdm)
+    # primary_role_idx = get_primary_role(names_sdm[author_name], nr_sdm, id_sdm)
+    primary_roles_sdm = get_primary_role_for_all(nr_sdm, id_sdm)
+    primary_role_idx = primary_roles_sdm[names_sdm[author_name]]
 
     final_values[3, :] = all_values[primary_role_idx, :]
 
     ### SIGMOD
     sigmod = []
-    for node_id in id_sigmod:
+    sigmod_node_mapping = {}
+    for i, node_id in enumerate(id_sigmod):
+        sigmod_node_mapping[node_id] = i
         sigmod.append(m_sigmod[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -271,13 +299,17 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_sigmod[author_name], nr_sigmod, id_sigmod)
+    # primary_role_idx = get_primary_role(names_sigmod[author_name], nr_sigmod, id_sigmod)
+    primary_roles_sigmod = get_primary_role_for_all(nr_sigmod, id_sigmod)
+    primary_role_idx = primary_roles_sigmod[names_sigmod[author_name]]
 
     final_values[4, :] = all_values[primary_role_idx, :]
 
     ### VLDB
     vldb = []
-    for node_id in id_vldb:
+    vldb_node_mapping = {}
+    for i, node_id in enumerate(id_vldb):
+        vldb_node_mapping[node_id] = i
         vldb.append(m_vldb[node_id, [labels['Betweenness'], labels['Closeness'],
                                      labels['#BCC'], labels['Degree'],
                                      labels['Wt_Degree'], labels['Clus_Coeff']]])
@@ -304,7 +336,9 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    primary_role_idx = get_primary_role(names_vldb[author_name], nr_vldb, id_vldb)
+    # primary_role_idx = get_primary_role(names_vldb[author_name], nr_vldb, id_vldb)
+    primary_roles_vldb = get_primary_role_for_all(nr_vldb, id_vldb)
+    primary_role_idx = primary_roles_vldb[names_vldb[author_name]]
 
     final_values[5, :] = all_values[primary_role_idx, :]
 
