@@ -65,6 +65,8 @@ def load_name_mapping(_file):
 
 
 if __name__ == '__main__':
+    # from matplotlib import rcParams
+    # rcParams['text.usetex'] = True
     argument_parser = argparse.ArgumentParser(prog='Author Visuals')
     argument_parser.add_argument('-n', '--author_name', help='author name', required=True)
     argument_parser.add_argument('-nw', '--network', help='author name', required=True)
@@ -76,11 +78,10 @@ if __name__ == '__main__':
     network = args.network
     method = args.method
 
-    # conf_ids = ['CIKM', 'ICDM', 'KDD', 'SDM', 'SIGMOD', 'VLDB']
-    # nw = '_05_10'
-    #
-    #
-    method_node_ids = {'riders_s': 'riders', 'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
+    method_node_ids = {'riders_s': 'riders', 'riders_r': 'riders', 'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
+    method_fig_label = {'riders_r': 'EERs Right Sparse', 'riders': 'EERs', 'rolx': 'RolX', 'sparse': 'GLRD-S', 'diverse': 'GLRD-D'}
+    nw_fig_label = {'_05_09': '2009', '_05_10': '2010', '_05_13': '2013'}
+
     final_values = np.zeros((6, 6))
 
     names_cikm = load_name_mapping('/Users/pratik/Research/datasets/DBLP/coauthorship/New_Experiments/CIKM/CIKM%s_Graph_mapping.txt' % (network))
@@ -119,6 +120,7 @@ if __name__ == '__main__':
     labels = dict((x, y + 1) for x, y in zip(all_measurement_labels, range(len(all_measurement_labels))))
 
     measurement_labels = ['Betweenness', 'Closeness', '#BCC', 'Degree', 'Wt. Degree', 'Clustering Coeff']
+    pruned_labels = dict((x, y) for x, y in zip(measurement_labels, range(len(measurement_labels))))
 
     cikm = []
     cikm_node_mapping = {}
@@ -150,11 +152,26 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    # primary_role_idx = get_primary_role(names_cikm[author_name], nr_cikm, id_cikm)
     primary_roles_cikm = get_primary_role_for_all(nr_cikm, id_cikm)
     primary_role_idx = primary_roles_cikm[names_cikm[author_name]]
 
     final_values[0, :] = all_values[primary_role_idx, :]
+
+    primary_role_between_cikm = []
+    primary_role_closeness_cikm = []
+    primary_role_bcc_cikm = []
+    primary_role_degree_cikm = []
+    primary_role_wt_degree_cikm = []
+    primary_role_clus_coeff_cikm = []
+
+    for nid, rid in primary_roles_cikm.iteritems():
+        if primary_role_idx == rid:
+            primary_role_between_cikm.append(cikm_normalized[cikm_node_mapping[nid], pruned_labels['Betweenness']])
+            primary_role_closeness_cikm.append(cikm_normalized[cikm_node_mapping[nid], pruned_labels['Closeness']])
+            primary_role_bcc_cikm.append(cikm_normalized[cikm_node_mapping[nid], pruned_labels['#BCC']])
+            primary_role_degree_cikm.append(cikm_normalized[cikm_node_mapping[nid], pruned_labels['Degree']])
+            primary_role_wt_degree_cikm.append(cikm_normalized[cikm_node_mapping[nid], pruned_labels['Wt. Degree']])
+            primary_role_clus_coeff_cikm.append(cikm_normalized[cikm_node_mapping[nid], pruned_labels['Clustering Coeff']])
 
 
     ### ICDM
@@ -188,11 +205,27 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    # primary_role_idx = get_primary_role(names_icdm[author_name], nr_icdm, id_icdm)
     primary_roles_icdm = get_primary_role_for_all(nr_icdm, id_icdm)
     primary_role_idx = primary_roles_icdm[names_icdm[author_name]]
 
     final_values[1, :] = all_values[primary_role_idx, :]
+
+    primary_role_between_icdm = []
+    primary_role_closeness_icdm = []
+    primary_role_bcc_icdm = []
+    primary_role_degree_icdm = []
+    primary_role_wt_degree_icdm = []
+    primary_role_clus_coeff_icdm = []
+
+    for nid, rid in primary_roles_icdm.iteritems():
+        if primary_role_idx == rid:
+            primary_role_between_icdm.append(icdm_normalized[icdm_node_mapping[nid], pruned_labels['Betweenness']])
+            primary_role_closeness_icdm.append(icdm_normalized[icdm_node_mapping[nid], pruned_labels['Closeness']])
+            primary_role_bcc_icdm.append(icdm_normalized[icdm_node_mapping[nid], pruned_labels['#BCC']])
+            primary_role_degree_icdm.append(icdm_normalized[icdm_node_mapping[nid], pruned_labels['Degree']])
+            primary_role_wt_degree_icdm.append(icdm_normalized[icdm_node_mapping[nid], pruned_labels['Wt. Degree']])
+            primary_role_clus_coeff_icdm.append(icdm_normalized[icdm_node_mapping[nid], pruned_labels['Clustering Coeff']])
+
 
     ### KDD
     kdd = []
@@ -225,11 +258,27 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    # primary_role_idx = get_primary_role(names_kdd[author_name], nr_kdd, id_kdd)
     primary_roles_kdd = get_primary_role_for_all(nr_kdd, id_kdd)
     primary_role_idx = primary_roles_kdd[names_kdd[author_name]]
 
     final_values[2, :] = all_values[primary_role_idx, :]
+
+    primary_role_between_kdd = []
+    primary_role_closeness_kdd = []
+    primary_role_bcc_kdd = []
+    primary_role_degree_kdd = []
+    primary_role_wt_degree_kdd = []
+    primary_role_clus_coeff_kdd = []
+
+    for nid, rid in primary_roles_kdd.iteritems():
+        if primary_role_idx == rid:
+            primary_role_between_kdd.append(kdd_normalized[kdd_node_mapping[nid], pruned_labels['Betweenness']])
+            primary_role_closeness_kdd.append(kdd_normalized[kdd_node_mapping[nid], pruned_labels['Closeness']])
+            primary_role_bcc_kdd.append(kdd_normalized[kdd_node_mapping[nid], pruned_labels['#BCC']])
+            primary_role_degree_kdd.append(kdd_normalized[kdd_node_mapping[nid], pruned_labels['Degree']])
+            primary_role_wt_degree_kdd.append(kdd_normalized[kdd_node_mapping[nid], pruned_labels['Wt. Degree']])
+            primary_role_clus_coeff_kdd.append(kdd_normalized[kdd_node_mapping[nid], pruned_labels['Clustering Coeff']])
+
 
     ### SDM
     sdm = []
@@ -262,11 +311,28 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    # primary_role_idx = get_primary_role(names_sdm[author_name], nr_sdm, id_sdm)
     primary_roles_sdm = get_primary_role_for_all(nr_sdm, id_sdm)
     primary_role_idx = primary_roles_sdm[names_sdm[author_name]]
 
     final_values[3, :] = all_values[primary_role_idx, :]
+
+
+    primary_role_between_sdm = []
+    primary_role_closeness_sdm = []
+    primary_role_bcc_sdm = []
+    primary_role_degree_sdm = []
+    primary_role_wt_degree_sdm = []
+    primary_role_clus_coeff_sdm = []
+
+    for nid, rid in primary_roles_sdm.iteritems():
+        if primary_role_idx == rid:
+            primary_role_between_sdm.append(sdm_normalized[sdm_node_mapping[nid], pruned_labels['Betweenness']])
+            primary_role_closeness_sdm.append(sdm_normalized[sdm_node_mapping[nid], pruned_labels['Closeness']])
+            primary_role_bcc_sdm.append(sdm_normalized[sdm_node_mapping[nid], pruned_labels['#BCC']])
+            primary_role_degree_sdm.append(sdm_normalized[sdm_node_mapping[nid], pruned_labels['Degree']])
+            primary_role_wt_degree_sdm.append(sdm_normalized[sdm_node_mapping[nid], pruned_labels['Wt. Degree']])
+            primary_role_clus_coeff_sdm.append(sdm_normalized[sdm_node_mapping[nid], pruned_labels['Clustering Coeff']])
+
 
     ### SIGMOD
     sigmod = []
@@ -299,11 +365,28 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    # primary_role_idx = get_primary_role(names_sigmod[author_name], nr_sigmod, id_sigmod)
     primary_roles_sigmod = get_primary_role_for_all(nr_sigmod, id_sigmod)
     primary_role_idx = primary_roles_sigmod[names_sigmod[author_name]]
 
     final_values[4, :] = all_values[primary_role_idx, :]
+
+
+    primary_role_between_sigmod = []
+    primary_role_closeness_sigmod = []
+    primary_role_bcc_sigmod = []
+    primary_role_degree_sigmod = []
+    primary_role_wt_degree_sigmod = []
+    primary_role_clus_coeff_sigmod = []
+
+    for nid, rid in primary_roles_sigmod.iteritems():
+        if primary_role_idx == rid:
+            primary_role_between_sigmod.append(sigmod_normalized[sigmod_node_mapping[nid], pruned_labels['Betweenness']])
+            primary_role_closeness_sigmod.append(sigmod_normalized[sigmod_node_mapping[nid], pruned_labels['Closeness']])
+            primary_role_bcc_sigmod.append(sigmod_normalized[sigmod_node_mapping[nid], pruned_labels['#BCC']])
+            primary_role_degree_sigmod.append(sigmod_normalized[sigmod_node_mapping[nid], pruned_labels['Degree']])
+            primary_role_wt_degree_sigmod.append(sigmod_normalized[sigmod_node_mapping[nid], pruned_labels['Wt. Degree']])
+            primary_role_clus_coeff_sigmod.append(sigmod_normalized[sigmod_node_mapping[nid], pruned_labels['Clustering Coeff']])
+
 
     ### VLDB
     vldb = []
@@ -336,19 +419,33 @@ if __name__ == '__main__':
 
     all_values = np.asarray(all_values)
     all_values = normalize(all_values, norm='l2', axis=0)  # role X measurements
-    # primary_role_idx = get_primary_role(names_vldb[author_name], nr_vldb, id_vldb)
     primary_roles_vldb = get_primary_role_for_all(nr_vldb, id_vldb)
     primary_role_idx = primary_roles_vldb[names_vldb[author_name]]
 
     final_values[5, :] = all_values[primary_role_idx, :]
+
+    primary_role_between_vldb = []
+    primary_role_closeness_vldb = []
+    primary_role_bcc_vldb = []
+    primary_role_degree_vldb = []
+    primary_role_wt_degree_vldb = []
+    primary_role_clus_coeff_vldb = []
+
+    for nid, rid in primary_roles_vldb.iteritems():
+        if primary_role_idx == rid:
+            primary_role_between_vldb.append(vldb_normalized[vldb_node_mapping[nid], pruned_labels['Betweenness']])
+            primary_role_closeness_vldb.append(vldb_normalized[vldb_node_mapping[nid], pruned_labels['Closeness']])
+            primary_role_bcc_vldb.append(vldb_normalized[vldb_node_mapping[nid], pruned_labels['#BCC']])
+            primary_role_degree_vldb.append(vldb_normalized[vldb_node_mapping[nid], pruned_labels['Degree']])
+            primary_role_wt_degree_vldb.append(vldb_normalized[vldb_node_mapping[nid], pruned_labels['Wt. Degree']])
+            primary_role_clus_coeff_vldb.append(vldb_normalized[vldb_node_mapping[nid], pruned_labels['Clustering Coeff']])
+
 
     colors = brewer2mpl.get_map('Set1', 'qualitative', 8).mpl_colors
 
     width = 0.12
     gap = 0.1
     ind = np.arange(6)
-
-    fig, ax = plt.subplots()
 
     between_values = final_values[:, 0]
     closeness_values = final_values[:, 1]
@@ -357,6 +454,9 @@ if __name__ == '__main__':
     wdegree_values = final_values[:, 4]
     clustering_values = final_values[:, 5]
 
+    fig = plt.figure()
+
+    ax = fig.add_subplot(2,3,1)
     rects1 = ax.bar(gap+ind, between_values, width, color=colors[0], label=measurement_labels[0])
     rects2 = ax.bar(gap+ind+width, closeness_values, width, color=colors[1], label=measurement_labels[1])
     rects3 = ax.bar(gap+ind+2*width, bcc_values, width, color=colors[2], label=measurement_labels[2])
@@ -364,13 +464,88 @@ if __name__ == '__main__':
     rects5 = ax.bar(gap+ind+4*width, wdegree_values, width, color=colors[4], label=measurement_labels[4])
     rects6 = ax.bar(gap+ind+5*width, clustering_values, width, color=colors[5], label=measurement_labels[5])
 
-    plt.xticks(ind, ['CIKM', 'ICDM', 'KDD', 'SDM', 'SIGMOD', 'VLDB'], rotation='vertical')
-    ax.set_xticks(ind)
-    ax.set_xticklabels(['CIKM', 'ICDM', 'KDD', 'SDM', 'SIGMOD', 'VLDB'], rotation=20, ha='left')
-    ax.tick_params(axis='x', length=50, which='major', direction='out', top='off', labelsize=20)
-    ax.set_ylabel('Normalized Role Measurement Scores', size=18)
-    plt.title(r'%s' % author_name, size=22)
-    #plt.title(r'CoR$\varepsilon$X-R Absolute Deviations from Baseline NodeSense on ICDM Co-Authorship Network, Year 2005-2009', size=16)
+    conf_labels = ['CIKM', 'ICDM', 'KDD', 'SDM', 'SIGMOD', 'VLDB']
+    ax.set_xticks(ind, conf_labels)#, rotation='vertical')
+    ax.set_xticklabels(conf_labels, rotation=20, ha='left')
+    ax.tick_params(axis='x', length=50, which='major', direction='out', top='off')  #, labelsize=20)
+    ax.set_ylabel('Normalized Measurement Scores')  #, size=18)
+    # ax.set_title(r'%s' % author_name)  #, size=22)
+    fig.suptitle(r'%s, %s Roles on DBLP 2005-%s' % (author_name, method_fig_label[method], nw_fig_label[network]), size=18)  #, size=22)
 
-    plt.legend(loc=1, ncol=3)
+    ax.legend(loc=1, ncol=3, fontsize='small')
+
+    ax1 = fig.add_subplot(2, 3, 2)
+    between_boxplot_data = [primary_role_between_cikm,primary_role_between_icdm, primary_role_between_kdd,
+                            primary_role_between_sdm, primary_role_between_sigmod, primary_role_between_vldb]
+    ax1.boxplot(between_boxplot_data,
+                 notch=True, sym='kD', patch_artist=True,
+                 boxprops={'facecolor': colors[0], 'edgecolor': colors[0]}, showmeans=True, meanline=True,
+                 meanprops={'color': 'black', 'lw': 2.0},
+                 medianprops={'lw': 2.0, 'color': 'black'}, flierprops={'alpha': 0.7})
+    ax1.set_xticks(ind, conf_labels)#, rotation='vertical')
+    ax1.set_xticklabels(conf_labels, rotation=90, ha='left')
+    ax1.tick_params(axis='x', length=50, which='major', direction='out', top='off')  #, labelsize=20)
+    ax1.set_ylabel('Normalized Betweenness Scores')  #, size=18)
+
+    ax2 = fig.add_subplot(2, 3, 3)
+    closeness_boxplot_data = [primary_role_closeness_cikm,primary_role_closeness_icdm, primary_role_closeness_kdd,
+                       primary_role_closeness_sdm, primary_role_closeness_sigmod, primary_role_closeness_vldb]
+    ax2.boxplot(closeness_boxplot_data,
+                       notch=True, sym='kD', patch_artist=True,
+                       boxprops={'facecolor': colors[1], 'edgecolor': colors[1]}, showmeans=True, meanline=True,
+                       meanprops={'color': 'black', 'lw': 2.0},
+                       medianprops={'lw': 2.0, 'color': 'black'}, flierprops={'alpha': 0.7})
+    ax2.set_xticks(ind, conf_labels)#, rotation='vertical')
+    ax2.set_xticklabels(conf_labels, rotation=90, ha='left')
+    ax2.tick_params(axis='x', length=50, which='major', direction='out', top='off')  #, labelsize=20)
+    ax2.set_ylabel('Normalized Closeness Scores')  #, size=18)
+
+    ax3 = fig.add_subplot(2, 3, 4)
+    bcc_boxplot_data = [primary_role_bcc_cikm,primary_role_bcc_icdm, primary_role_bcc_kdd,
+                       primary_role_bcc_sdm, primary_role_bcc_sigmod, primary_role_bcc_vldb]
+    ax3.boxplot(bcc_boxplot_data,
+                       notch=True, sym='kD', patch_artist=True,
+                       boxprops={'facecolor': colors[2], 'edgecolor': colors[2]}, showmeans=True, meanline=True,
+                       meanprops={'color': 'black', 'lw': 2.0},
+                       medianprops={'lw': 2.0, 'color': 'black'}, flierprops={'alpha': 0.7})
+    ax3.set_xticks(ind, conf_labels)#, rotation='vertical')
+    ax3.set_xticklabels(conf_labels, rotation=90, ha='left')
+    ax3.tick_params(axis='x', length=50, which='major', direction='out', top='off')  #, labelsize=20)
+    ax3.set_ylabel('Normalized #BCC Scores')  #, size=18)
+
+    ax4 = fig.add_subplot(2, 3, 5)
+    degree_boxplot_data = [primary_role_degree_cikm,primary_role_degree_icdm, primary_role_degree_kdd,
+                       primary_role_degree_sdm, primary_role_degree_sigmod, primary_role_degree_vldb]
+    ax4.boxplot(degree_boxplot_data,
+                       notch=True, sym='kD', patch_artist=True,
+                       boxprops={'facecolor': colors[3], 'edgecolor': colors[3]}, showmeans=True, meanline=True,
+                       meanprops={'color': 'black', 'lw': 2.0},
+                       medianprops={'lw': 2.0, 'color': 'black'}, flierprops={'alpha': 0.7})
+    ax4.set_xticks(ind, conf_labels)#, rotation='vertical')
+    ax4.set_xticklabels(conf_labels, rotation=90, ha='left')
+    ax4.tick_params(axis='x', length=50, which='major', direction='out', top='off')  #, labelsize=20)
+    ax4.set_ylabel('Normalized Degree Scores')  #, size=18)
+
+    # ax2 = fig.add_subplot(3, 3, 5)
+    # wt_degree_boxplot_data = [primary_role_wt_degree_cikm,primary_role_wt_degree_icdm, primary_role_wt_degree_kdd,
+    #                    primary_role_wt_degree_sdm, primary_role_wt_degree_sigmod, primary_role_wt_degree_vldb]
+    # ax2.boxplot(wt_degree_boxplot_data,
+    #                    notch=True, sym='kD', patch_artist=True,
+    #                    boxprops={'facecolor': colors[4], 'edgecolor': colors[4]}, showmeans=True, meanline=True,
+    #                    meanprops={'color': 'black', 'lw': 2.0},
+    #                    medianprops={'lw': 2.0, 'color': 'black'}, flierprops={'alpha': 0.7})
+
+    ax6 = fig.add_subplot(2, 3, 6)
+    clus_coeff_boxplot_data = [primary_role_clus_coeff_cikm,primary_role_clus_coeff_icdm, primary_role_clus_coeff_kdd,
+                       primary_role_clus_coeff_sdm, primary_role_clus_coeff_sigmod, primary_role_clus_coeff_vldb]
+    ax6.boxplot(clus_coeff_boxplot_data,
+                       notch=True, sym='kD', patch_artist=True,
+                       boxprops={'facecolor': colors[5], 'edgecolor': colors[5]}, showmeans=True, meanline=True,
+                       meanprops={'color': 'black', 'lw': 2.0},
+                       medianprops={'lw': 2.0, 'color': 'black'}, flierprops={'alpha': 0.7})
+    ax6.set_xticks(ind, conf_labels)#, rotation='vertical')
+    ax6.set_xticklabels(conf_labels, rotation=90, ha='left')
+    ax6.tick_params(axis='x', length=50, which='major', direction='out', top='off')  #, labelsize=20)
+    ax6.set_ylabel('Normalized Clustering Coeff. Scores')  #, size=18)
+
     plt.show()
