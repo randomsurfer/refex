@@ -33,13 +33,6 @@ G(.)(i) - denotes the i^th column vector of G.
 F(i)(.) - denotes the i^th row vector of F.
 '''
 
-# numpy 2d array slicing:
-# test = numpy.array([[1, 2], [3, 4], [5, 6]])
-# test[:,:] => full array
-# test[0,:] => 1st row
-# test[:,0] => 1st col
-# test[:,1] => 2nd col
-
 
 def get_residual(G, F, k):
     m, n = G.shape
@@ -47,7 +40,9 @@ def get_residual(G, F, k):
     if n != p:
         raise ValueError('Incorrect dimensions for Matrix Factorization')
     R = np.zeros((m, q))
-    for idx in xrange(k-1):
+    for idx in xrange(n):
+        if idx == k:
+            continue
         R += np.outer(G[:, idx], F[idx, :])
     return R
 

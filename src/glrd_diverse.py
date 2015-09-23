@@ -40,7 +40,9 @@ def get_residual(G, F, k):
     if n != p:
         raise ValueError('Incorrect dimensions for Matrix Factorization')
     R = np.zeros((m, q))
-    for idx in xrange(k-1):
+    for idx in xrange(n):
+        if idx == k:
+            continue
         R += np.outer(G[:, idx], F[idx, :])
     return R
 
