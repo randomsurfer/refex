@@ -69,7 +69,7 @@ if __name__ == "__main__":
     node_measurement_file = args.node_measurement
     node_measurements = np.loadtxt(node_measurement_file, delimiter=',')
 
-    methods = ['riders_r', 'riders_s', 'riders', 'rolx', 'sparse', 'diverse']
+    methods = ['riders_r', 'riders', 'rolx', 'sparse', 'diverse']
     methods_id = {'corex': 'corex', 'riders_s': 'riders', 'riders_r': 'riders',
                   'riders': 'riders', 'rolx': 'rolx', 'sparse': 'rolx', 'diverse': 'rolx'}
 
@@ -81,9 +81,9 @@ if __name__ == "__main__":
                               'Ego_0_Deg', 'Ego_1_Deg', 'Ego_0_Wt', 'Ego_1_Wt',
                               'Degree', 'Wt. Degree', 'Clustering Coeff']
 
-    method_measurement_aad = np.zeros((6, 10))
-    method_measurement_aad_std = np.zeros((6, 10))
-    method_measurement_msd = np.zeros((6, 10))
+    method_measurement_aad = np.zeros((5, 10))
+    method_measurement_aad_std = np.zeros((5, 10))
+    method_measurement_msd = np.zeros((5, 10))
     method_stds = {}
 
     for idx, method in enumerate(methods):
@@ -161,9 +161,9 @@ if __name__ == "__main__":
     method_measurement_msd /= 500.0
     method_measurement_aad /= 500.0
 
-    np.savetxt('methods_aad.txt', method_measurement_aad)
+    np.savetxt('methods_aad_ran.txt', method_measurement_aad)
 
     for i, method in enumerate(methods):
         for j, label in enumerate(all_measurement_labels):
             method_measurement_aad_std[i][j] = np.std(method_stds[method][label])
-    np.savetxt('methods_aad_std.txt', method_measurement_aad_std)
+    np.savetxt('methods_aad_ran_std.txt', method_measurement_aad_std)
