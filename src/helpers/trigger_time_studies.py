@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import networkx as nx
+import numpy as np
 
 
 def load_graph(file_name):
@@ -18,72 +19,68 @@ def load_graph(file_name):
 current_time = lambda: int(round(time.time() * 1000))
 
 
-try:
-    in_file = sys.argv[1]
-except IndexError:
-    print 'Usage:: python %s <graph_file>' % sys.argv[0]
-    sys.exit(1)
+cores = '60'
+gamma = '2-5'
 
-graph = load_graph(in_file)
+for size in range(200000, 1000001, 200000):
+    in_file = '%s.txt' % size
+    out_file = 'time_%s_%s_%s.txt' % (cores, gamma, size)
 
-d = 0.0
-for n in graph.nodes():
-    d += float(len(graph.neighbors(n)))
-V = graph.number_of_nodes()
-avg_degree = int(V / d)
+    f_out = open(out_file, 'w')
 
-print 'Average Degree', avg_degree
+    graph = load_graph(in_file)
 
-fo = open('graph.txt', 'w')
+    d = 0.0
+    for n in graph.nodes():
+        d += float(len(graph.neighbors(n)))
+    V = graph.number_of_nodes()
 
-adj_lists = graph.adjacency_list()
+    avg_degree = int(np.ceil(d / V))
 
-for adj_list in adj_lists:
-    adj = [str(a) for a in adj_list]
-    final_str = ' '.join(adj)
-    fo.write(final_str + '\n')
-fo.close()
+    fo = open('graph.txt', 'w')
 
+    adj_lists = graph.adjacency_list()
 
-# Calculate the degree of the graph in this code
-# 1. Run EEP, epsilon = 1 to degree
-# 2. Run riders_features
-# 3. Run parameterized_nmf in parallel
-# os.system()
-start = current_time()
-print 'EEP_Start\t%s' % start
-out_path = 'partition'
-if not os.path.exists(out_path):
-    os.makedirs(out_path)
-else:
-    os.system('rm -f partition/*')
+    for adj_list in adj_lists:
+        adj = [str(a) for a in adj_list]
+        final_str = ' '.join(adj)
+        fo.write(final_str + '\n')
+    fo.close()
 
-for epsilon in range(1, avg_degree+1):
-    os.system('java -cp eep-1.0-SNAPSHOT-jar-with-dependencies.jar rider.eep.ParallelEEP graph.txt %s %s/%s.txt' %
-              (epsilon, out_path, epsilon))
-end = current_time()
-print 'EEP_End\t%s' % end
+    start = current_time()
+    f_out.write('EEP_Start\t%s\n' % start)
+    out_path = 'partition'
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
+    else:
+        os.system('rm -f partition/*')
 
-out_path = 'features'
-if not os.path.exists(out_path):
-    os.makedirs(out_path)
-else:
-    os.system('rm -f features/*')
+    for epsilon in range(1, avg_degree+1):
+        os.system('java -cp eep-1.0-SNAPSHOT-jar-with-dependencies.jar rider.eep.ParallelEEP graph.txt %s %s/%s.txt' %
+                  (epsilon, out_path, epsilon))
+    end = current_time()
+    f_out.write('EEP_End\t%s\n' % end)
 
-start = current_time()
-print 'RIDER_Features_Start\t%s' % start
-os.system('python riders_features.py -g %s -b 17 -rd partition -od features' % (in_file))
+    out_path = 'features'
+    if not os.path.exists(out_path):
+        os.makedirs(out_path)
+    else:
+        os.system('rm -f features/*')
 
-end = current_time()
-print 'RIDER_Features_End\t%s' % end
+    start = current_time()
+    f_out.write('RIDER_Start\t%s\n' % start)
+    os.system('python riders_features.py -g %s -b 17 -rd partition -od features' % (in_file))
 
-fo = open('mdl.txt', 'w')
-fo.close()
+    end = current_time()
+    f_out.write('RIDER_End\t%s\n' % end)
 
-start = current_time()
-print 'NMF_Start\t%s' % start
+    fo = open('mdl.txt', 'w')
+    fo.close()
 
-os.system('seq 100 2 | parallel python parameterized_nmf.py -nf features/out-features.txt -r {}')
+    start = current_time()
+    f_out.write('NMF_Start\t%s\n' % start)
 
-end = current_time()
-print 'NMF_End\t%s' % end
+    os.system('seq 60 -1 1 | parallel -j60 python parameterized_nmf.py -nf features/out-features.txt -r {}')
+
+    end = current_time()
+    f_out.write('NMF_End\t%s\n' % end)
