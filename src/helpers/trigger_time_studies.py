@@ -54,6 +54,8 @@ for epsilon in range(1, avg_degree+1):
     out_path = 'partition'
     if not os.path.exists(out_path):
         os.makedirs(out_path)
+    else:
+        os.system('rm -rf partition/*')
     os.system('java -cp eep-1.0-SNAPSHOT-jar-with-dependencies.jar rider.eep.ParallelEEP graph.txt %s %s/%s.txt' %
               (epsilon, out_path, epsilon))
 end = current_time()
@@ -62,6 +64,8 @@ print 'EEP_End\t%s' % end
 out_path = 'features'
 if not os.path.exists(out_path):
     os.makedirs(out_path)
+else:
+    os.system('rm -rf features/*')
 
 start = current_time()
 print 'RIDER_Features_Start\t%s' % start
