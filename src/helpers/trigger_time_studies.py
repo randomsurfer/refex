@@ -8,7 +8,7 @@ def load_graph(file_name):
     graph = nx.Graph()
     for line in open(file_name):
         line = line.strip()
-        line = line.split(',')
+        line = line.split('\t')
         source = int(line[0])
         dest = int(line[1])
         graph.add_edge(source, dest)
@@ -50,12 +50,13 @@ fo.close()
 # os.system()
 start = current_time()
 print 'EEP_Start\t%s' % start
+out_path = 'partition'
+if not os.path.exists(out_path):
+    os.makedirs(out_path)
+else:
+    os.system('rm -f partition/*')
+
 for epsilon in range(1, avg_degree+1):
-    out_path = 'partition'
-    if not os.path.exists(out_path):
-        os.makedirs(out_path)
-    else:
-        os.system('rm -rf partition/*')
     os.system('java -cp eep-1.0-SNAPSHOT-jar-with-dependencies.jar rider.eep.ParallelEEP graph.txt %s %s/%s.txt' %
               (epsilon, out_path, epsilon))
 end = current_time()
@@ -65,7 +66,7 @@ out_path = 'features'
 if not os.path.exists(out_path):
     os.makedirs(out_path)
 else:
-    os.system('rm -rf features/*')
+    os.system('rm -f features/*')
 
 start = current_time()
 print 'RIDER_Features_Start\t%s' % start
