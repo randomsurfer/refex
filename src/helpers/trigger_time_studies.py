@@ -32,6 +32,8 @@ for n in graph.nodes():
 V = graph.number_of_nodes()
 avg_degree = int(V / d)
 
+print 'Average Degree', avg_degree
+
 fo = open('graph.txt', 'w')
 
 adj_lists = graph.adjacency_list()
