@@ -108,26 +108,17 @@ if __name__ == '__main__':
         author_nr_idx = icdm_node_mapping[names_icdm[author_name]]
 
         cosine_values = []
-        for idx, node_id in enumerate(id_icdm):
+        for idx, id_file_id in enumerate(id_icdm):
             if idx == author_nr_idx:
                 continue
             sim = cosine_similarity(author_nr_vector, nr_icdm[idx, :])
-            cosine_values.append((idx, sim))
+            cosine_values.append((id_file_id, sim))
 
         sorted_cosine = sorted(cosine_values, key=lambda x: x[1], reverse=True)
 
         author_ranks = get_measurements(normalized_measurements_icdm, names_icdm[author_name], labels)
 
-
         ranks = get_measurements(normalized_measurements_icdm, sorted_cosine[0][0], labels)
-        # print '%s\t%s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f' % (method, rev_names_icdm[sorted_cosine[0][0]],
-        #                                                         abs(author_ranks['Betweenness'] - ranks['Betweenness']),
-        #                                                         abs(author_ranks['Closeness'] - ranks['Closeness']),
-        #                                                         abs(author_ranks['#BCC'] - ranks['#BCC']),
-        #                                                         abs(author_ranks['Degree'] - ranks['Degree']),
-        #                                                         abs(author_ranks['Wt_Degree'] - ranks['Wt_Degree']),
-        #                                                         abs(author_ranks['Clus_Coeff'] - ranks['Clus_Coeff']),
-        #                                                         sorted_cosine[0][1])
 
         final_output[method] = [rev_names_icdm[sorted_cosine[0][0]],
                                 abs(author_ranks['Betweenness'] - ranks['Betweenness']),
@@ -137,8 +128,6 @@ if __name__ == '__main__':
                                 abs(author_ranks['Wt_Degree'] - ranks['Wt_Degree']),
                                 abs(author_ranks['Clus_Coeff'] - ranks['Clus_Coeff']),
                                 sorted_cosine[0][1]]
-
-    # print author_name
 
     latex_labels = '\\textbf{%s} & \\multicolumn{1}{l|}{\\textit{Closest to }\\textbf{%s}} & ' \
                    '\\multicolumn{1}{l|}{$Betweenness$} & ' \
@@ -168,31 +157,3 @@ if __name__ == '__main__':
             result_string += '\\bottomrule'
         print result_string
     print '\\end{tabular}'
-
-        # ranks = get_measurements(normalized_measurements_cikm, sorted_cosine[1][0], labels)
-        # print '%s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f' % (rev_names_cikm[sorted_cosine[1][0]],
-        #                                                         abs(author_ranks['Betweenness'] - ranks['Betweenness']),
-        #                                                         abs(author_ranks['Closeness'] - ranks['Closeness']),
-        #                                                         abs(author_ranks['#BCC'] - ranks['#BCC']),
-        #                                                         abs(author_ranks['Degree'] - ranks['Degree']),
-        #                                                         abs(author_ranks['Wt_Degree'] - ranks['Wt_Degree']),
-        #                                                         abs(author_ranks['Clus_Coeff'] - ranks['Clus_Coeff']),
-        #                                                         sorted_cosine[1][1])
-        # ranks = get_measurements(normalized_measurements_cikm, sorted_cosine[2][0], labels)
-        # print '%s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f' % (rev_names_cikm[sorted_cosine[2][0]],
-        #                                                         abs(author_ranks['Betweenness'] - ranks['Betweenness']),
-        #                                                         abs(author_ranks['Closeness'] - ranks['Closeness']),
-        #                                                         abs(author_ranks['#BCC'] - ranks['#BCC']),
-        #                                                         abs(author_ranks['Degree'] - ranks['Degree']),
-        #                                                         abs(author_ranks['Wt_Degree'] - ranks['Wt_Degree']),
-        #                                                         abs(author_ranks['Clus_Coeff'] - ranks['Clus_Coeff']),
-        #                                                         sorted_cosine[2][1])
-        # ranks = get_measurements(normalized_measurements_cikm, sorted_cosine[3][0], labels)
-        # print '%s\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t%.2f' % (rev_names_cikm[sorted_cosine[3][0]],
-        #                                                         abs(author_ranks['Betweenness'] - ranks['Betweenness']),
-        #                                                         abs(author_ranks['Closeness'] - ranks['Closeness']),
-        #                                                         abs(author_ranks['#BCC'] - ranks['#BCC']),
-        #                                                         abs(author_ranks['Degree'] - ranks['Degree']),
-        #                                                         abs(author_ranks['Wt_Degree'] - ranks['Wt_Degree']),
-        #                                                         abs(author_ranks['Clus_Coeff'] - ranks['Clus_Coeff']),
-        #                                                         sorted_cosine[3][1])
