@@ -3,6 +3,7 @@ import numpy.linalg as la
 from sklearn.preprocessing import normalize as norm
 import brewer2mpl
 import matplotlib.pyplot as plt
+import pickle
 
 
 def cosine_similarity(a, b):
@@ -177,7 +178,14 @@ for method in methods:
     clus[method] = list(clus[method][0, :])
     ego[method] = list(ego[method][0, :])
 
+with open('cikm_bet.pickle', 'wb') as handle:
+    pickle.dump(bet, handle)
 
+with open('cikm_clus.pickle', 'wb') as handle:
+    pickle.dump(clus, handle)
+
+with open('cikm_ego.pickle', 'wb') as handle:
+    pickle.dump(ego, handle)
 
 method_line_style = ['-', '-', '--', '-.', '-.']
 colors = brewer2mpl.get_map('Set1', 'qualitative', 8).mpl_colors
@@ -217,7 +225,7 @@ ax.set_title('CIKM Ego-1-Wt')
 ax.set_xlabel('Top-k Set Size', fontsize='medium')
 ax.set_ylabel('Cumulative AAD', fontsize='medium')
 ax.set_yticks(np.round(np.linspace(min_y, max_y, 4), 4))
-ax.legend(loc='lower right', ncol=3, fontsize='small')
+# ax.legend(loc='lower right', ncol=3, fontsize='small')
 
 ax = fig.add_subplot(6, 3, 3)
 
@@ -362,7 +370,14 @@ for method in methods:
     clus[method] = list(clus[method][0, :])
     ego[method] = list(ego[method][0, :])
 
+with open('icdm_bet.pickle', 'wb') as handle:
+    pickle.dump(bet, handle)
 
+with open('icdm_clus.pickle', 'wb') as handle:
+    pickle.dump(clus, handle)
+
+with open('icdm_ego.pickle', 'wb') as handle:
+    pickle.dump(ego, handle)
 
 method_line_style = ['-', '-', '--', '-.', '-.']
 colors = brewer2mpl.get_map('Set1', 'qualitative', 8).mpl_colors
@@ -372,7 +387,7 @@ method_node_ids = {'riders_s': 'riders', 'riders_r': 'riders', 'riders': 'riders
 legend_names = {'riders_r': r'RID$\varepsilon$Rs-R', 'riders': r'RID$\varepsilon$Rs',
                 'rolx': r'RolX', 'sparse': r'GLRD-S', 'diverse': r'GLRD-D'}
 
-fig = plt.figure()
+# fig = plt.figure()
 ax = fig.add_subplot(6, 3, 4)
 
 min_y = 0.0
@@ -402,7 +417,7 @@ ax.set_title('ICDM Ego-1-Wt')
 ax.set_xlabel('Top-k Set Size', fontsize='medium')
 ax.set_ylabel('Cumulative AAD', fontsize='medium')
 ax.set_yticks(np.round(np.linspace(min_y, max_y, 4), 4))
-ax.legend(loc='lower right', ncol=3, fontsize='small')
+# ax.legend(loc='lower right', ncol=3, fontsize='small')
 
 ax = fig.add_subplot(6, 3, 6)
 
@@ -545,7 +560,14 @@ for method in methods:
     clus[method] = list(clus[method][0, :])
     ego[method] = list(ego[method][0, :])
 
+with open('kdd_bet.pickle', 'wb') as handle:
+    pickle.dump(bet, handle)
 
+with open('kdd_clus.pickle', 'wb') as handle:
+    pickle.dump(clus, handle)
+
+with open('kdd_ego.pickle', 'wb') as handle:
+    pickle.dump(ego, handle)
 
 method_line_style = ['-', '-', '--', '-.', '-.']
 colors = brewer2mpl.get_map('Set1', 'qualitative', 8).mpl_colors
@@ -555,7 +577,7 @@ method_node_ids = {'riders_s': 'riders', 'riders_r': 'riders', 'riders': 'riders
 legend_names = {'riders_r': r'RID$\varepsilon$Rs-R', 'riders': r'RID$\varepsilon$Rs',
                 'rolx': r'RolX', 'sparse': r'GLRD-S', 'diverse': r'GLRD-D'}
 
-fig = plt.figure()
+# fig = plt.figure()
 ax = fig.add_subplot(6, 3, 7)
 
 min_y = 0.0
@@ -585,7 +607,7 @@ ax.set_title('KDD Ego-1-Wt')
 ax.set_xlabel('Top-k Set Size', fontsize='medium')
 ax.set_ylabel('Cumulative AAD', fontsize='medium')
 ax.set_yticks(np.round(np.linspace(min_y, max_y, 4), 4))
-ax.legend(loc='lower right', ncol=3, fontsize='small')
+# ax.legend(loc='lower right', ncol=3, fontsize='small')
 
 ax = fig.add_subplot(6, 3, 9)
 
@@ -730,7 +752,14 @@ for method in methods:
     clus[method] = list(clus[method][0, :])
     ego[method] = list(ego[method][0, :])
 
+with open('sdm_bet.pickle', 'wb') as handle:
+    pickle.dump(bet, handle)
 
+with open('sdmm_clus.pickle', 'wb') as handle:
+    pickle.dump(clus, handle)
+
+with open('sdmm_ego.pickle', 'wb') as handle:
+    pickle.dump(ego, handle)
 
 method_line_style = ['-', '-', '--', '-.', '-.']
 colors = brewer2mpl.get_map('Set1', 'qualitative', 8).mpl_colors
@@ -740,7 +769,7 @@ method_node_ids = {'riders_s': 'riders', 'riders_r': 'riders', 'riders': 'riders
 legend_names = {'riders_r': r'RID$\varepsilon$Rs-R', 'riders': r'RID$\varepsilon$Rs',
                 'rolx': r'RolX', 'sparse': r'GLRD-S', 'diverse': r'GLRD-D'}
 
-fig = plt.figure()
+# fig = plt.figure()
 ax = fig.add_subplot(6, 3, 10)
 
 min_y = 0.0
@@ -770,7 +799,7 @@ ax.set_title('SDM Ego-1-Wt')
 ax.set_xlabel('Top-k Set Size', fontsize='medium')
 ax.set_ylabel('Cumulative AAD', fontsize='medium')
 ax.set_yticks(np.round(np.linspace(min_y, max_y, 4), 4))
-ax.legend(loc='lower right', ncol=3, fontsize='small')
+# ax.legend(loc='lower right', ncol=3, fontsize='small')
 
 ax = fig.add_subplot(6, 3, 12)
 
@@ -915,7 +944,14 @@ for method in methods:
     clus[method] = list(clus[method][0, :])
     ego[method] = list(ego[method][0, :])
 
+with open('sigmod_bet.pickle', 'wb') as handle:
+    pickle.dump(bet, handle)
 
+with open('sigmod_clus.pickle', 'wb') as handle:
+    pickle.dump(clus, handle)
+
+with open('sigmod_ego.pickle', 'wb') as handle:
+    pickle.dump(ego, handle)
 
 method_line_style = ['-', '-', '--', '-.', '-.']
 colors = brewer2mpl.get_map('Set1', 'qualitative', 8).mpl_colors
@@ -925,7 +961,7 @@ method_node_ids = {'riders_s': 'riders', 'riders_r': 'riders', 'riders': 'riders
 legend_names = {'riders_r': r'RID$\varepsilon$Rs-R', 'riders': r'RID$\varepsilon$Rs',
                 'rolx': r'RolX', 'sparse': r'GLRD-S', 'diverse': r'GLRD-D'}
 
-fig = plt.figure()
+# fig = plt.figure()
 ax = fig.add_subplot(6, 3, 13)
 
 min_y = 0.0
@@ -955,7 +991,7 @@ ax.set_title('SIGMOD Ego-1-Wt')
 ax.set_xlabel('Top-k Set Size', fontsize='medium')
 ax.set_ylabel('Cumulative AAD', fontsize='medium')
 ax.set_yticks(np.round(np.linspace(min_y, max_y, 4), 4))
-ax.legend(loc='lower right', ncol=3, fontsize='small')
+# ax.legend(loc='lower right', ncol=3, fontsize='small')
 
 ax = fig.add_subplot(6, 3, 15)
 
@@ -1099,7 +1135,14 @@ for method in methods:
     clus[method] = list(clus[method][0, :])
     ego[method] = list(ego[method][0, :])
 
+with open('vldb_bet.pickle', 'wb') as handle:
+    pickle.dump(bet, handle)
 
+with open('vldb_clus.pickle', 'wb') as handle:
+    pickle.dump(clus, handle)
+
+with open('vldb_ego.pickle', 'wb') as handle:
+    pickle.dump(ego, handle)
 
 method_line_style = ['-', '-', '--', '-.', '-.']
 colors = brewer2mpl.get_map('Set1', 'qualitative', 8).mpl_colors
@@ -1109,7 +1152,7 @@ method_node_ids = {'riders_s': 'riders', 'riders_r': 'riders', 'riders': 'riders
 legend_names = {'riders_r': r'RID$\varepsilon$Rs-R', 'riders': r'RID$\varepsilon$Rs',
                 'rolx': r'RolX', 'sparse': r'GLRD-S', 'diverse': r'GLRD-D'}
 
-fig = plt.figure()
+# fig = plt.figure()
 ax = fig.add_subplot(6, 3, 16)
 
 min_y = 0.0
@@ -1139,7 +1182,7 @@ ax.set_title('VLDB Ego-1-Wt')
 ax.set_xlabel('Top-k Set Size', fontsize='medium')
 ax.set_ylabel('Cumulative AAD', fontsize='medium')
 ax.set_yticks(np.round(np.linspace(min_y, max_y, 4), 4))
-ax.legend(loc='lower right', ncol=3, fontsize='small')
+# ax.legend(loc='lower right', ncol=3, fontsize='small')
 
 ax = fig.add_subplot(6, 3, 18)
 
@@ -1155,6 +1198,15 @@ ax.set_title('VLDB Clustering Coeff.')
 ax.set_xlabel('Top-k Set Size', fontsize='medium')
 ax.set_ylabel('Cumulative AAD', fontsize='medium')
 ax.set_yticks(np.round(np.linspace(min_y, max_y, 4), 4))
+
+# Shrink current axis's height by 10% on the bottom
+# box = ax.get_position()
+# ax.set_position([box.x0, box.y0 + box.height * 0.1,
+#                  box.width, box.height * 0.9])
+
+# Put a legend below current axis
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),
+          fancybox=True, shadow=True, ncol=5)
 
 plt.show()
 plt.savefig('Topk_Sample.pdf')

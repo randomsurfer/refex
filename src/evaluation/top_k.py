@@ -94,36 +94,37 @@ if __name__ == '__main__':
         measurement_labels = ['Betweenness', 'Closeness', '#BCC', 'Degree', 'Wt_Degree', 'Clus_Coeff']
         pruned_labels = dict((x, y) for x, y in zip(all_measurement_labels, range(len(measurement_labels))))
 
-        icdm_node_mapping = {}
-        for i, node_id in enumerate(id_icdm):
-            icdm_node_mapping[node_id] = i
+        cikm_node_mapping = {}
+        for i, node_id in enumerate(id_cikm):
+            cikm_node_mapping[node_id] = i
 
-        # m_icdm = norm(m_icdm, norm='l2', axis=0)
-        p, q = m_icdm.shape
-        normalized_measurements_icdm = np.zeros((p, q))
-        normalized_measurements_icdm[:, 0] = m_icdm[:, 0]
-        normalized_measurements_icdm[:, 1:] = norm(m_icdm[:, 1:], norm='l2', axis=0)
+        # m_cikm = norm(m_cikm, norm='l2', axis=0)
+        p, q = m_cikm.shape
+        normalized_measurements_cikm = np.zeros((p, q))
+        normalized_measurements_cikm[:, 0] = m_cikm[:, 0]
+        normalized_measurements_cikm[:, 1:] = norm(m_cikm[:, 1:], norm='l2', axis=0)
 
-        author_nr_vector = nr_icdm[icdm_node_mapping[names_icdm[author_name]], :]
-        author_nr_idx = icdm_node_mapping[names_icdm[author_name]]
+        author_nr_vector = nr_cikm[cikm_node_mapping[names_cikm[author_name]], :]
+        author_nr_idx = cikm_node_mapping[names_cikm[author_name]]
 
         cosine_values = []
-        for idx, id_file_id in enumerate(id_icdm):
+        for idx, id_file_id in enumerate(id_cikm):
             if idx == author_nr_idx:
                 continue
-            sim = cosine_similarity(author_nr_vector, nr_icdm[idx, :])
+            sim = cosine_similarity(author_nr_vector, nr_cikm[idx, :])
             cosine_values.append((id_file_id, sim))
 
         sorted_cosine = sorted(cosine_values, key=lambda x: x[1], reverse=True)
 
-        author_ranks = get_measurements(normalized_measurements_icdm, names_icdm[author_name], labels)
+        author_ranks = get_measurements(normalized_measurements_cikm, names_cikm[author_name], labels)
 
-        ranks = get_measurements(normalized_measurements_icdm, sorted_cosine[0][0], labels)
+        ranks = get_measurements(normalized_measurements_cikm, sorted_cosine[0][0], labels)
 
-        final_output[method] = [rev_names_icdm[sorted_cosine[0][0]],
+        final_output[method] = [rev_names_cikm[sorted_cosine[0][0]],
                                 abs(author_ranks['Betweenness'] - ranks['Betweenness']),
                                 abs(author_ranks['Closeness'] - ranks['Closeness']),
                                 abs(author_ranks['#BCC'] - ranks['#BCC']),
+                                abs(author_ranks['Ego_1_Wt'] - ranks['Ego_1_Wt']),
                                 abs(author_ranks['Degree'] - ranks['Degree']),
                                 abs(author_ranks['Wt_Degree'] - ranks['Wt_Degree']),
                                 abs(author_ranks['Clus_Coeff'] - ranks['Clus_Coeff']),
@@ -133,16 +134,17 @@ if __name__ == '__main__':
                    '\\multicolumn{1}{l|}{$Betweenness$} & ' \
                    '\\multicolumn{1}{l|}{$Closeness$} &' \
                    '\\multicolumn{1}{l|}{$\#BCC$} & ' \
+                    '\\multicolumn{1}{l|}{$Ego\_1\_Wt$} & ' \
                    '\\multicolumn{1}{l|}{$Degree$} & ' \
                    '\\multicolumn{1}{l|}{$Wt. Degree$} & \\multicolumn{1}{l|}{$Clus\_Coeff$} & \multicolumn{1}{l}{$Cosine\\text{ }Similarity$} \\\\ \\midrule'
 
-    header = latex_labels % ('ICDM (2005-10)', author_name)
+    header = latex_labels % ('CIKM (2005-13)', author_name)
 
-    print '\\begin{tabular}{l|r|r|r|r|r|r|r|r} \\toprule'
+    print '\\begin{tabular}{l|r|r|r|r|r|r|r|r|r} \\toprule'
     print header
 
     for method in methods:
-        result_string = '%s & %s & %.2f & %.2f & %.2f & %.2f & %.2f & %.2f & %.2f \\\\ ' % (latex_methods_name[method],
+        result_string = '%s & %s & %.2f & %.2f & %.2f & %.2f & %.2f & %.2f & %.2f & %.2f \\\\ ' % (latex_methods_name[method],
                                                                     final_output[method][0],
                                                                     final_output[method][1],
                                                                     final_output[method][2],
@@ -150,7 +152,8 @@ if __name__ == '__main__':
                                                                     final_output[method][4],
                                                                     final_output[method][5],
                                                                     final_output[method][6],
-                                                                    final_output[method][7])
+                                                                    final_output[method][7],
+                                                                    final_output[method][8])
         if method == 'riders_r':
             result_string += '\\midrule'
         elif method == 'diverse':
